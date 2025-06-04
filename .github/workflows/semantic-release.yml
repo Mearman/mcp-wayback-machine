@@ -43,11 +43,26 @@ jobs:
         run: yarn build
 
       - name: Run semantic-release
+        id: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx semantic-release
+        run: |
+          # Capture the current version before release
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # Run semantic-release
+          npx semantic-release
+          
+          # Check if version changed (indicating a release was made)
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          if [ "$CURRENT_VERSION" != "$NEW_VERSION" ]; then
+            echo "new-release-published=true" >> $GITHUB_OUTPUT
+            echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "new-release-published=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Generate SBOM
         if: steps.semantic-release.outputs.new-release-published == 'true'
