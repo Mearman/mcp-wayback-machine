@@ -5,13 +5,9 @@ import { fetchWithTimeout, HttpError, parseJsonResponse } from './http.js';
 global.fetch = vi.fn();
 
 describe('fetchWithTimeout', () => {
-	beforeEach(() => {
-		vi.useFakeTimers();
-	});
-
 	afterEach(() => {
 		vi.clearAllMocks();
-		vi.useRealTimers();
+		vi.restoreAllMocks();
 	});
 
 	it('should make a successful request', async () => {
@@ -36,9 +32,11 @@ describe('fetchWithTimeout', () => {
 	});
 
 	it('should handle timeout', async () => {
-		vi.mocked(fetch).mockImplementationOnce(
-			() => new Promise(() => {}), // Never resolves
-		);
+		// Create an abort controller to simulate timeout
+		const abortError = new Error('The operation was aborted');
+		abortError.name = 'AbortError';
+		
+		vi.mocked(fetch).mockRejectedValueOnce(abortError);
 
 		await expect(fetchWithTimeout('https://example.com', { timeout: 100 })).rejects.toThrow(
 			'Request timeout after 100ms',
