@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.2...v1.0.3) (2025-06-04)
+
+
+### Bug Fixes
+
+* skip prepublishOnly script for GitHub Packages publish ([25c3c3f](https://github.com/Mearman/mcp-wayback-machine/commit/25c3c3fc104f7c0c55cf4a8e9bf3d5952aa91884))
+
 ## [1.0.2](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.1...v1.0.2) (2025-06-04)
 
 
