@@ -18,7 +18,7 @@
     "web-archiving"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "CC-BY-NC-SA-4.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "zod": "^3.24.1"
