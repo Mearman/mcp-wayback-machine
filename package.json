@@ -11,6 +11,10 @@
     "start": "node dist/index.js",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "check": "biome check .",
     "commit": "cz",
     "release": "standard-version",
     "release:minor": "standard-version --release-as minor",
@@ -18,12 +22,7 @@
     "release:major": "standard-version --release-as major",
     "prepare": "husky"
   },
-  "keywords": [
-    "mcp",
-    "wayback-machine",
-    "internet-archive",
-    "web-archiving"
-  ],
+  "keywords": ["mcp", "wayback-machine", "internet-archive", "web-archiving"],
   "author": "",
   "license": "CC-BY-NC-SA-4.0",
   "repository": {
@@ -39,17 +38,13 @@
     "registry": "https://registry.npmjs.org/",
     "provenance": true
   },
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md",
-    "CHANGELOG.md"
-  ],
+  "files": ["dist", "LICENSE", "README.md", "CHANGELOG.md"],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "zod": "^3.25.51"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/node": "^22.15.29",
