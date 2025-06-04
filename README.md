@@ -155,22 +155,33 @@ For completeness, here are Internet Archive APIs that require authentication but
 ### S3-Compatible API (IAS3)
 - **Authentication**: S3-style access keys from `https://archive.org/account/s3.php`
 - **Features**: Upload files, modify metadata, create items, manage collections
-- **Documentation**: [Internet Archive Python Library](https://archive.org/developers/internetarchive/)
+- **Documentation**: 
+  - [Internet Archive Python Library](https://archive.org/developers/internetarchive/)
+  - [IAS3 API Documentation](https://archive.org/developers/ias3.html)
+  - [Metadata Schema](https://archive.org/developers/metadata-schema/)
 
 ### Authenticated Search API
 - **Authentication**: S3 credentials
 - **Features**: Advanced search capabilities, higher rate limits
 - **Access**: Requires Internet Archive account
+- **Documentation**: 
+  - [Advanced Search API](https://archive.org/developers/advancedsearch.html)
+  - [Search API Examples](https://archive.org/developers/search.html)
 
 ### Save Page Now 2 (SPN2) - Enhanced Features
 - **Authentication**: Partnership agreement typically required
 - **Features**: Bulk captures, priority processing, higher rate limits
-- **Documentation**: [SPN2 API](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)
+- **Documentation**: 
+  - [SPN2 API Guide](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)
+  - [Save Page Now Overview](https://help.archive.org/save-pages-in-the-wayback-machine/)
 
 ### Partner/Bulk Access APIs
 - **Authentication**: Special partnership agreement
 - **Features**: Bulk downloads, custom data exports, direct database access
 - **Access**: Contact Internet Archive directly
+- **Documentation**: 
+  - [Researcher Services](https://archive.org/details/researcher-services)
+  - [Bulk Access Information](https://archive.org/about/bulk-access/)
 
 ### Getting API Keys
 1. Create account at [archive.org](https://archive.org)
