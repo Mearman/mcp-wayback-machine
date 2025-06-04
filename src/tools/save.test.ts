@@ -9,8 +9,8 @@ vi.mock('../utils/rate-limit.js');
 describe('saveUrl', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue();
-		vi.spyOn(rateLimitModule.waybackRateLimiter, 'recordRequest').mockImplementation();
+		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue(undefined as any);
+		vi.spyOn(rateLimitModule.waybackRateLimiter, 'recordRequest').mockImplementation(() => {});
 	});
 
 	afterEach(() => {

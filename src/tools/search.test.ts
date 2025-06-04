@@ -9,8 +9,8 @@ vi.mock('../utils/rate-limit.js');
 describe('searchArchives', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue();
-		vi.spyOn(rateLimitModule.waybackRateLimiter, 'recordRequest').mockImplementation();
+		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue(undefined as any);
+		vi.spyOn(rateLimitModule.waybackRateLimiter, 'recordRequest').mockImplementation(() => {});
 	});
 
 	afterEach(() => {
@@ -29,7 +29,7 @@ describe('searchArchives', () => {
 			['com,example)/', '20231225120000', 'https://example.com/', 'text/html', '200', 'ABC123', '1234']
 		]);
 
-		const result = await searchArchives({ url: 'https://example.com' });
+		const result = await searchArchives({ url: 'https://example.com', limit: 10 });
 
 		expect(result.success).toBe(true);
 		expect(result.results).toHaveLength(1);
@@ -54,7 +54,7 @@ describe('searchArchives', () => {
 			['urlkey', 'timestamp', 'original', 'mimetype', 'statuscode', 'digest', 'length']
 		]);
 
-		const result = await searchArchives({ url: 'https://example.com' });
+		const result = await searchArchives({ url: 'https://example.com', limit: 10 });
 
 		expect(result.success).toBe(true);
 		expect(result.results).toEqual([]);
@@ -92,7 +92,8 @@ describe('searchArchives', () => {
 	it('should handle invalid date formats', async () => {
 		const result = await searchArchives({ 
 			url: 'https://example.com',
-			from: 'invalid-date'
+			from: 'invalid-date',
+			limit: 10
 		});
 
 		expect(result.success).toBe(false);
@@ -104,7 +105,7 @@ describe('searchArchives', () => {
 			new httpModule.HttpError('Not found', 404)
 		);
 
-		const result = await searchArchives({ url: 'https://example.com' });
+		const result = await searchArchives({ url: 'https://example.com', limit: 10 });
 
 		expect(result.success).toBe(true);
 		expect(result.results).toEqual([]);
@@ -116,14 +117,14 @@ describe('searchArchives', () => {
 			new httpModule.HttpError('Server error', 500)
 		);
 
-		const result = await searchArchives({ url: 'https://example.com' });
+		const result = await searchArchives({ url: 'https://example.com', limit: 10 });
 
 		expect(result.success).toBe(false);
 		expect(result.message).toContain('Failed to search archives');
 	});
 
 	it('should handle invalid URLs', async () => {
-		const result = await searchArchives({ url: 'not-a-url' });
+		const result = await searchArchives({ url: 'not-a-url', limit: 10 });
 
 		expect(result.success).toBe(false);
 		expect(result.message).toContain('Failed to search archives');
