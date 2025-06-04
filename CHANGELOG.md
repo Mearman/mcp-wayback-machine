@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.1...v1.0.2) (2025-06-04)
+
+
+### Bug Fixes
+
+* add version detection for GitHub Packages publishing ([4298868](https://github.com/Mearman/mcp-wayback-machine/commit/429886820cb90238249fdf8563c203fff55f5382))
+
 ## [1.0.1](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.0...v1.0.1) (2025-06-04)
 
 
