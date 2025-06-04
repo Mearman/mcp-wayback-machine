@@ -1,5 +1,8 @@
-# Format staged files
-npx biome check --write $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json)$' | xargs)
+# Format all non-gitignored files
+npx biome check --write .
+
+# Stage any formatting changes
+git add -u
 
 # Run tests
 npm test
