@@ -12,6 +12,8 @@ describe('Package configuration', () => {
 
 	it('should have correct bin configuration', () => {
 		expect(packageJson.bin).toBeDefined();
+		expect(typeof packageJson.bin).toBe('object');
+		expect(packageJson.bin).toHaveProperty('mcp-wayback-machine');
 		expect(packageJson.bin['mcp-wayback-machine']).toBe('dist/index.js');
 	});
 
