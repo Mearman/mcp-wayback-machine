@@ -96,8 +96,10 @@ jobs:
       - name: Publish to GitHub Packages
         if: steps.semantic-release.outputs.new-release-published == 'true'
         run: |
-          # Update package name for GitHub Packages
-          npm pkg set name="@${{ github.repository_owner }}/mcp-wayback-machine"
+          # Update package name for GitHub Packages (must be lowercase)
+          npm pkg set name="@mearman/mcp-wayback-machine"
+          # Ensure we're publishing to GitHub Packages registry
+          npm config set registry https://npm.pkg.github.com/
           # Skip prepublishOnly script to avoid running tests with modified package name
           npm publish --access public --provenance --ignore-scripts
         env:
