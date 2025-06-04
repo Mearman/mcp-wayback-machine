@@ -38,12 +38,24 @@ This MCP server provides tools to:
 
 4. **search_archives**
    - Query CDX API for available snapshots
-   - Filter by date range
-   - Return list of available versions
+   - Filter by date range, status code, mimetype
+   - Support different match types (exact, prefix, host, domain)
+   - Return list of available versions with metadata
 
 5. **get_archive_availability**
    - Check if a URL has been archived
+   - Return closest snapshot to a given timestamp
    - Return summary of archive coverage
+
+6. **get_timemap**
+   - Retrieve TimeMap for a URL (all available timestamps)
+   - Returns list of all archived versions
+   - Implements Memento Protocol
+
+7. **search_internet_archive**
+   - Search across Internet Archive collections
+   - Not limited to Wayback Machine
+   - Find related archived content
 
 ### Technical Implementation
 
@@ -55,9 +67,18 @@ This MCP server provides tools to:
 
 ### API Endpoints (No Keys Required)
 
-- Save: `https://web.archive.org/save/{url}`
-- Availability: `https://archive.org/wayback/available?url={url}`
-- CDX Search: `https://web.archive.org/cdx/search/cdx?url={url}`
+- **Save Page Now**: `https://web.archive.org/save/{url}` - Archive pages on demand
+  - [Documentation](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/edit#heading=h.uu61fictja6r)
+- **Availability API**: `http://archive.org/wayback/available?url={url}` - Check archive status
+  - [Documentation](https://archive.org/help/wayback_api.php)
+- **CDX Server API**: `http://web.archive.org/cdx/search/cdx?url={url}` - Advanced search and filtering
+  - [Documentation](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server#readme)
+- **TimeMap API**: `http://web.archive.org/web/timemap/link/{url}` - Get all timestamps for a URL
+  - [Memento Protocol](http://timetravel.mementoweb.org/guide/api/)
+- **Metadata API**: `https://archive.org/metadata/{identifier}` - Get Internet Archive item metadata
+  - [Documentation](https://archive.org/developers/metadata-schema/index.html)
+- **Search API**: `https://archive.org/advancedsearch.php?q={query}&output=json` - Search collections
+  - [Documentation](https://archive.org/developers/advancedsearch.html)
 
 ### Project Structure
 
@@ -110,6 +131,22 @@ npm run dev    # Run in development mode
 npm test       # Run tests
 npm run build  # Build for production
 ```
+
+## Resources
+
+### Official Documentation
+- [Wayback Machine APIs Overview](https://archive.org/developers/wayback-api.html)
+- [Internet Archive API Documentation](https://archive.org/developers/)
+- [CDX Server Documentation](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server)
+- [Save Page Now 2 (SPN2) API](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)
+- [Memento Protocol Guide](http://timetravel.mementoweb.org/guide/api/)
+
+### Rate Limits & Best Practices
+- No hard rate limits for public APIs
+- Be respectful - add delays between requests
+- Use specific date ranges to reduce CDX result sets
+- Cache responses when possible
+- Include descriptive User-Agent header
 
 ## License
 
