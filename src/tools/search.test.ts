@@ -3,7 +3,14 @@ import { searchArchives } from './search.js';
 import * as httpModule from '../utils/http.js';
 import * as rateLimitModule from '../utils/rate-limit.js';
 
-vi.mock('../utils/http.js');
+vi.mock('../utils/http.js', async () => {
+	const actual = await vi.importActual<typeof import('../utils/http.js')>('../utils/http.js');
+	return {
+		...actual,
+		fetchWithTimeout: vi.fn(),
+		parseJsonResponse: vi.fn(),
+	};
+});
 vi.mock('../utils/rate-limit.js');
 
 describe('searchArchives', () => {

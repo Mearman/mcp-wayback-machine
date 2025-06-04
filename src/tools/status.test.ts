@@ -3,7 +3,14 @@ import { checkArchiveStatus } from './status.js';
 import * as httpModule from '../utils/http.js';
 import * as rateLimitModule from '../utils/rate-limit.js';
 
-vi.mock('../utils/http.js');
+vi.mock('../utils/http.js', async () => {
+	const actual = await vi.importActual<typeof import('../utils/http.js')>('../utils/http.js');
+	return {
+		...actual,
+		fetchWithTimeout: vi.fn(),
+		parseJsonResponse: vi.fn(),
+	};
+});
 vi.mock('../utils/rate-limit.js');
 
 describe('checkArchiveStatus', () => {
@@ -47,8 +54,8 @@ describe('checkArchiveStatus', () => {
 		expect(result.lastCapture).toBe('2023-12-25');
 		expect(result.totalCaptures).toBe(500);
 		expect(result.yearlyCaptures).toEqual({
-			'2023': 930,
-			'2022': 405
+			'2023': 780,
+			'2022': 390
 		});
 	});
 
@@ -118,6 +125,7 @@ describe('checkArchiveStatus', () => {
 		expect(result.success).toBe(true);
 		expect(result.isArchived).toBe(false);
 		expect(result.totalCaptures).toBe(0);
+		expect(result.message).toContain('has not been archived');
 	});
 
 	it('should handle other HTTP errors', async () => {

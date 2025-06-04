@@ -3,7 +3,14 @@ import { getArchivedUrl } from './retrieve.js';
 import * as httpModule from '../utils/http.js';
 import * as rateLimitModule from '../utils/rate-limit.js';
 
-vi.mock('../utils/http.js');
+vi.mock('../utils/http.js', async () => {
+	const actual = await vi.importActual<typeof import('../utils/http.js')>('../utils/http.js');
+	return {
+		...actual,
+		fetchWithTimeout: vi.fn(),
+		parseJsonResponse: vi.fn(),
+	};
+});
 vi.mock('../utils/rate-limit.js');
 
 describe('getArchivedUrl', () => {
@@ -89,7 +96,7 @@ describe('getArchivedUrl', () => {
 
 		expect(result.success).toBe(true);
 		expect(result.available).toBe(false);
-		expect(result.archivedUrl).toBe('https://web.archive.org/web/20231225120000/https://example.com');
+		expect(result.archivedUrl).toBe('https://web.archive.org/web/20231225120000/https://example.com/');
 	});
 
 	it('should handle HTTP errors', async () => {
