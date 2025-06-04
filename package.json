@@ -1,0 +1,32 @@
+{
+  "name": "mcp-wayback-machine",
+  "version": "0.1.0",
+  "description": "MCP server for interacting with the Wayback Machine without API keys",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "keywords": [
+    "mcp",
+    "wayback-machine",
+    "internet-archive",
+    "web-archiving"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
