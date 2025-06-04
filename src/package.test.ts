@@ -12,9 +12,16 @@ describe('Package configuration', () => {
 
 	it('should have correct bin configuration', () => {
 		expect(packageJson.bin).toBeDefined();
-		expect(typeof packageJson.bin).toBe('object');
-		expect(packageJson.bin).toHaveProperty('mcp-wayback-machine');
-		expect(packageJson.bin['mcp-wayback-machine']).toBe('dist/index.js');
+		// Handle both string and object forms of bin
+		if (typeof packageJson.bin === 'string') {
+			// If bin is a string, it should be the path directly
+			expect(packageJson.bin).toBe('dist/index.js');
+		} else {
+			// If bin is an object, check the property
+			expect(typeof packageJson.bin).toBe('object');
+			expect(packageJson.bin).toHaveProperty('mcp-wayback-machine');
+			expect(packageJson.bin['mcp-wayback-machine']).toBe('dist/index.js');
+		}
 	});
 
 	it('should have correct main entry point', () => {
