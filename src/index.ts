@@ -7,31 +7,12 @@ import {
 	ListToolsRequestSchema,
 	McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
 
-// Tool schemas
-const SaveUrlSchema = z.object({
-	url: z.string().url().describe('The URL to save to the Wayback Machine'),
-});
-
-const GetArchivedUrlSchema = z.object({
-	url: z.string().url().describe('The URL to retrieve from the Wayback Machine'),
-	timestamp: z
-		.string()
-		.optional()
-		.describe('Specific timestamp (YYYYMMDDhhmmss) or "latest" for most recent'),
-});
-
-const SearchArchivesSchema = z.object({
-	url: z.string().url().describe('The URL pattern to search for'),
-	from: z.string().optional().describe('Start date (YYYY-MM-DD)'),
-	to: z.string().optional().describe('End date (YYYY-MM-DD)'),
-	limit: z.number().optional().default(10).describe('Maximum number of results'),
-});
-
-const CheckArchiveStatusSchema = z.object({
-	url: z.string().url().describe('The URL to check'),
-});
+// Import tools
+import { SaveUrlSchema, saveUrl } from './tools/save.js';
+import { GetArchivedUrlSchema, getArchivedUrl } from './tools/retrieve.js';
+import { SearchArchivesSchema, searchArchives } from './tools/search.js';
+import { CheckArchiveStatusSchema, checkArchiveStatus } from './tools/status.js';
 
 // Create server instance
 const server = new Server(
@@ -78,61 +59,108 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
 	const { name, arguments: args } = request.params;
 
-	switch (name) {
-		case 'save_url': {
-			const { url } = SaveUrlSchema.parse(args);
-			// TODO: Implement save URL functionality
-			return {
-				content: [
-					{
-						type: 'text',
-						text: `URL ${url} would be saved to Wayback Machine (not implemented yet)`,
-					},
-				],
-			};
-		}
+	try {
+		switch (name) {
+			case 'save_url': {
+				const input = SaveUrlSchema.parse(args);
+				const result = await saveUrl(input);
+				
+				let text = result.message;
+				if (result.archivedUrl) {
+					text += `\n\nArchived URL: ${result.archivedUrl}`;
+				}
+				if (result.timestamp) {
+					text += `\nTimestamp: ${result.timestamp}`;
+				}
+				if (result.jobId) {
+					text += `\nJob ID: ${result.jobId}`;
+				}
+				
+				return {
+					content: [{ type: 'text', text }],
+				};
+			}
 
-		case 'get_archived_url': {
-			const { url, timestamp } = GetArchivedUrlSchema.parse(args);
-			// TODO: Implement get archived URL functionality
-			return {
-				content: [
-					{
-						type: 'text',
-						text: `Would retrieve archived version of ${url} at ${timestamp || 'latest'} (not implemented yet)`,
-					},
-				],
-			};
-		}
+			case 'get_archived_url': {
+				const input = GetArchivedUrlSchema.parse(args);
+				const result = await getArchivedUrl(input);
+				
+				let text = result.message;
+				if (result.archivedUrl) {
+					text += `\n\nArchived URL: ${result.archivedUrl}`;
+				}
+				if (result.timestamp) {
+					text += `\nTimestamp: ${result.timestamp}`;
+				}
+				if (result.available !== undefined) {
+					text += `\nAvailable: ${result.available ? 'Yes' : 'No'}`;
+				}
+				
+				return {
+					content: [{ type: 'text', text }],
+				};
+			}
 
-		case 'search_archives': {
-			const { url, from, to, limit } = SearchArchivesSchema.parse(args);
-			// TODO: Implement search functionality
-			return {
-				content: [
-					{
-						type: 'text',
-						text: `Would search archives for ${url} from ${from || 'any'} to ${to || 'any'} with limit ${limit} (not implemented yet)`,
-					},
-				],
-			};
-		}
+			case 'search_archives': {
+				const input = SearchArchivesSchema.parse(args);
+				const result = await searchArchives(input);
+				
+				let text = result.message;
+				if (result.results && result.results.length > 0) {
+					text += '\n\nResults:';
+					for (const archive of result.results) {
+						text += `\n\n- Date: ${archive.date}`;
+						text += `\n  URL: ${archive.archivedUrl}`;
+						text += `\n  Status: ${archive.statusCode}`;
+						text += `\n  Type: ${archive.mimeType}`;
+					}
+				}
+				
+				return {
+					content: [{ type: 'text', text }],
+				};
+			}
 
-		case 'check_archive_status': {
-			const { url } = CheckArchiveStatusSchema.parse(args);
-			// TODO: Implement status check functionality
-			return {
-				content: [
-					{
-						type: 'text',
-						text: `Would check archive status for ${url} (not implemented yet)`,
-					},
-				],
-			};
-		}
+			case 'check_archive_status': {
+				const input = CheckArchiveStatusSchema.parse(args);
+				const result = await checkArchiveStatus(input);
+				
+				let text = result.message;
+				if (result.isArchived) {
+					if (result.firstCapture) {
+						text += `\n\nFirst captured: ${result.firstCapture}`;
+					}
+					if (result.lastCapture) {
+						text += `\nLast captured: ${result.lastCapture}`;
+					}
+					if (result.totalCaptures !== undefined) {
+						text += `\nTotal captures: ${result.totalCaptures}`;
+					}
+					if (result.yearlyCaptures && Object.keys(result.yearlyCaptures).length > 0) {
+						text += '\n\nCaptures by year:';
+						for (const [year, count] of Object.entries(result.yearlyCaptures)) {
+							text += `\n  ${year}: ${count}`;
+						}
+					}
+				}
+				
+				return {
+					content: [{ type: 'text', text }],
+				};
+			}
 
-		default:
-			throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+			default:
+				throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+		}
+	} catch (error) {
+		if (error instanceof McpError) {
+			throw error;
+		}
+		
+		throw new McpError(
+			ErrorCode.InternalError,
+			error instanceof Error ? error.message : 'Unknown error occurred',
+		);
 	}
 });
 
