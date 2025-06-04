@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.0...v1.0.1) (2025-06-04)
+
+
+### Bug Fixes
+
+* restore bin field as object for proper CLI naming ([ab966b2](https://github.com/Mearman/mcp-wayback-machine/commit/ab966b28b01ecd1938a3cf3640922ab7e0d24a16))
+
 # 1.0.0 (2025-06-04)
 
 
