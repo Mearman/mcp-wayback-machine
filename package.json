@@ -1,12 +1,10 @@
 {
 	"name": "mcp-wayback-machine",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "MCP server for interacting with the Wayback Machine without API keys",
 	"main": "dist/index.js",
 	"type": "module",
-	"bin": {
-		"mcp-wayback-machine": "dist/index.js"
-	},
+	"bin": "dist/index.js",
 	"scripts": {
 		"build": "tsc",
 		"dev": "tsx watch src/index.ts",

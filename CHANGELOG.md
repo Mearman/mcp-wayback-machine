@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.3...v1.0.4) (2025-06-04)
+
+
+### Bug Fixes
+
+* use lowercase package name and correct registry for GitHub Packages ([0a3b4ba](https://github.com/Mearman/mcp-wayback-machine/commit/0a3b4ba9958f1680245eb5b5b30f84ff82475631))
+
 ## [1.0.3](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.2...v1.0.3) (2025-06-04)
 
 
