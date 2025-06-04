@@ -131,13 +131,25 @@ Add to your Claude Desktop settings:
 }
 ```
 
-#### Using local installation
+#### Using local installation  
 ```json
 {
   "mcpServers": {
     "wayback-machine": {
       "command": "node",
       "args": ["/absolute/path/to/mcp-wayback-machine/dist/index.js"]
+    }
+  }
+}
+```
+
+#### For development (without building)
+```json
+{
+  "mcpServers": {
+    "wayback-machine": {
+      "command": "npx",
+      "args": ["tsx", "/absolute/path/to/mcp-wayback-machine/src/index.ts"]
     }
   }
 }
