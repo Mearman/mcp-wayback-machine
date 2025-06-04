@@ -87,3 +87,7 @@ Thumbs.db
 
 # Yarn Integrity file
 .yarn-integrity
+
+# Claude memory files
+.claude/
+CLAUDE.md

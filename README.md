@@ -1,5 +1,9 @@
 # MCP Wayback Machine Server
 
+[![npm version](https://img.shields.io/npm/v/mcp-wayback-machine.svg)](https://www.npmjs.com/package/mcp-wayback-machine)
+[![GitHub](https://img.shields.io/github/license/Mearman/mcp-wayback-machine)](https://github.com/Mearman/mcp-wayback-machine)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Mearman/mcp-wayback-machine/ci.yml?branch=main)](https://github.com/Mearman/mcp-wayback-machine/actions)
+
 An MCP (Model Context Protocol) server for interacting with the Internet Archive's Wayback Machine without requiring API keys.
 
 ## Overview
