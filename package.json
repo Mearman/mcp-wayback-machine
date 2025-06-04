@@ -4,35 +4,34 @@
 	"description": "MCP server for interacting with the Wayback Machine without API keys",
 	"main": "dist/index.js",
 	"type": "module",
-	"bin": "dist/index.js",
+	"bin": {
+		"mcp-wayback-machine": "dist/index.js"
+	},
 	"scripts": {
 		"build": "tsc",
 		"dev": "tsx watch src/index.ts",
-		"start": "node dist/index.js",
 		"test": "vitest",
 		"test:watch": "vitest --watch",
-		"lint": "biome check .",
-		"lint:fix": "biome check --write .",
-		"format": "biome format --write .",
-		"check": "biome check .",
-		"commit": "cz",
-		"release": "standard-version",
-		"release:minor": "standard-version --release-as minor",
-		"release:patch": "standard-version --release-as patch",
-		"release:major": "standard-version --release-as major",
-		"prepare": "husky"
+		"prepare": "npm run build",
+		"prepublishOnly": "npm test && npm run build",
+		"start": "node dist/index.js"
 	},
-	"keywords": ["mcp", "wayback-machine", "internet-archive", "web-archiving"],
-	"author": "",
+	"keywords": [
+		"mcp",
+		"wayback",
+		"wayback-machine",
+		"internet-archive",
+		"archival",
+		"web-archive",
+		"mcp-server",
+		"model-context-protocol"
+	],
+	"author": "Joseph Mearman",
 	"license": "CC-BY-NC-SA-4.0",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/yourusername/mcp-wayback-machine.git"
+		"url": "git+https://github.com/Mearman/mcp-wayback-machine.git"
 	},
-	"bugs": {
-		"url": "https://github.com/yourusername/mcp-wayback-machine/issues"
-	},
-	"homepage": "https://github.com/yourusername/mcp-wayback-machine#readme",
 	"publishConfig": {
 		"access": "public",
 		"registry": "https://registry.npmjs.org/",
@@ -44,22 +43,16 @@
 		"zod": "^3.25.51"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@commitlint/cli": "^19.8.1",
-		"@commitlint/config-conventional": "^19.8.1",
-		"@types/node": "^22.15.29",
-		"commitizen": "^4.3.1",
-		"cz-conventional-changelog": "^3.3.0",
-		"husky": "^9.1.7",
-		"standard-version": "^9.5.0",
-		"tsx": "^4.19.4",
-		"typescript": "^5.8.3",
-		"vitest": "^3.2.1"
+		"@commitlint/cli": "^19.6.1",
+		"@commitlint/config-conventional": "^19.6.0",
+		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/git": "^10.0.1",
+		"@types/node": "^22.13.2",
+		"tsx": "^4.19.2",
+		"typescript": "^5.7.3",
+		"vitest": "^2.2.3"
 	},
-	"packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538",
-	"config": {
-		"commitizen": {
-			"path": "./node_modules/cz-conventional-changelog"
-		}
+	"engines": {
+		"node": ">=18"
 	}
 }
