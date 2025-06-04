@@ -47,7 +47,8 @@
 			"pnpm-lock.yaml",
 			"CHANGELOG.md",
 			"**/*.yml",
-			"**/*.yaml"
+			"**/*.yaml",
+			"**/*.md"
 		]
 	}
 }
