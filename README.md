@@ -10,64 +10,56 @@ An MCP (Model Context Protocol) server for interacting with the Internet Archive
 
 This MCP server provides tools to:
 - Save web pages to the Wayback Machine
-- Retrieve archived versions of web pages
-- Check archive status and availability
-- Search the Wayback Machine CDX API
+- Retrieve archived versions of web pages  
+- Check archive status and statistics
+- Search the Wayback Machine CDX API for available snapshots
 
 ## Features
 
 - **No API keys required** - Uses public Wayback Machine endpoints
 - **Save pages** - Archive any publicly accessible URL
-- **Retrieve archives** - Get archived versions with timestamps
-- **Verify archives** - Check if saves were successful
-- **Search archives** - Query available snapshots for a URL
+- **Retrieve archives** - Get archived versions with optional timestamps
+- **Archive statistics** - Get capture counts and yearly statistics
+- **Search archives** - Query available snapshots with date filtering
+- **Rate limiting** - Built-in rate limiting to respect service limits
 
-## Architecture Plan
+## Tools
 
-### Core Tools
+### 1. **save_url**
+Archive a URL to the Wayback Machine.
+- **Input**: `url` (required) - The URL to save
+- **Output**: Success status, archived URL, and timestamp
+- Handles rate limiting automatically
 
-1. **save_url**
-   - Triggers archiving of a URL
-   - Returns the archive timestamp and URL
-   - Handles rate limiting and retries
+### 2. **get_archived_url**  
+Retrieve an archived version of a URL.
+- **Input**: 
+  - `url` (required) - The URL to retrieve
+  - `timestamp` (optional) - Specific timestamp (YYYYMMDDhhmmss) or "latest"
+- **Output**: Archived URL, timestamp, and availability status
 
-2. **get_archived_url**
-   - Retrieves the most recent archived version
-   - Option to specify a specific timestamp
-   - Returns the wayback URL
+### 3. **search_archives**
+Search for all archived versions of a URL.
+- **Input**:
+  - `url` (required) - The URL to search for
+  - `from` (optional) - Start date (YYYY-MM-DD)
+  - `to` (optional) - End date (YYYY-MM-DD)  
+  - `limit` (optional) - Maximum results (default: 10)
+- **Output**: List of snapshots with dates, URLs, status codes, and mime types
 
-3. **check_archive_status**
-   - Verifies if an archive request completed
-   - Returns status and final archive URL
+### 4. **check_archive_status**
+Check archival statistics for a URL.
+- **Input**: `url` (required) - The URL to check
+- **Output**: Archive status, first/last capture dates, total captures, yearly statistics
 
-4. **search_archives**
-   - Query CDX API for available snapshots
-   - Filter by date range, status code, mimetype
-   - Support different match types (exact, prefix, host, domain)
-   - Return list of available versions with metadata
-
-5. **get_archive_availability**
-   - Check if a URL has been archived
-   - Return closest snapshot to a given timestamp
-   - Return summary of archive coverage
-
-6. **get_timemap**
-   - Retrieve TimeMap for a URL (all available timestamps)
-   - Returns list of all archived versions
-   - Implements Memento Protocol
-
-7. **search_internet_archive**
-   - Search across Internet Archive collections
-   - Not limited to Wayback Machine
-   - Find related archived content
-
-### Technical Implementation
+### Technical Details
 
 - **Transport**: Stdio (for Claude Desktop integration)
-- **HTTP Client**: Built-in fetch for API calls
-- **Rate Limiting**: Respect Wayback Machine limits
-- **Error Handling**: Graceful handling of failed saves
-- **Validation**: URL validation before operations
+- **HTTP Client**: Built-in fetch with timeout support
+- **Rate Limiting**: 15 requests per minute (conservative limit)
+- **Error Handling**: Graceful handling with detailed error messages
+- **Validation**: URL and timestamp validation
+- **TypeScript**: Full type safety with Zod schema validation
 
 ### API Endpoints (No Keys Required)
 
@@ -89,18 +81,18 @@ This MCP server provides tools to:
 ```
 mcp-wayback-machine/
 ├── src/
-│   ├── index.ts          # Main server entry point
+│   ├── index.ts          # MCP server entry point
 │   ├── tools/            # Tool implementations
-│   │   ├── save.ts
-│   │   ├── retrieve.ts
-│   │   ├── search.ts
-│   │   └── status.ts
+│   │   ├── save.ts       # save_url tool
+│   │   ├── retrieve.ts   # get_archived_url tool
+│   │   ├── search.ts     # search_archives tool
+│   │   └── status.ts     # check_archive_status tool
 │   ├── utils/            # Utilities
-│   │   ├── http.ts       # HTTP client wrapper
-│   │   ├── validation.ts # URL validation
-│   │   └── rate-limit.ts # Rate limiting
-│   └── types.ts          # TypeScript types
-├── tests/                # Test files
+│   │   ├── http.ts       # HTTP client with timeout
+│   │   ├── validation.ts # URL/timestamp validation
+│   │   └── rate-limit.ts # Rate limiting implementation
+│   └── *.test.ts         # Test files (alongside source)
+├── dist/                 # Built JavaScript files
 ├── package.json
 ├── tsconfig.json
 └── README.md
@@ -108,21 +100,44 @@ mcp-wayback-machine/
 
 ## Installation
 
+### From npm
 ```bash
-npm install
-npm run build
+npm install -g mcp-wayback-machine
+```
+
+### From source
+```bash
+git clone https://github.com/Mearman/mcp-wayback-machine.git
+cd mcp-wayback-machine
+yarn install
+yarn build
 ```
 
 ## Usage
 
-Configure in Claude Desktop settings:
+### Claude Desktop Configuration
 
+Add to your Claude Desktop settings:
+
+#### Using npm installation
+```json
+{
+  "mcpServers": {
+    "wayback-machine": {
+      "command": "npx",
+      "args": ["mcp-wayback-machine"]
+    }
+  }
+}
+```
+
+#### Using local installation
 ```json
 {
   "mcpServers": {
     "wayback-machine": {
       "command": "node",
-      "args": ["/path/to/mcp-wayback-machine/dist/index.js"]
+      "args": ["/absolute/path/to/mcp-wayback-machine/dist/index.js"]
     }
   }
 }
@@ -131,10 +146,15 @@ Configure in Claude Desktop settings:
 ## Development
 
 ```bash
-npm run dev    # Run in development mode
-npm test       # Run tests
-npm run build  # Build for production
+yarn dev       # Run in development mode with hot reload
+yarn test      # Run tests  
+yarn test:watch # Run tests in watch mode
+yarn build     # Build for production
+yarn start     # Run production build
 ```
+
+### Testing
+The project uses Vitest for testing. Tests are located alongside source files with `.test.ts` extensions.
 
 ## Resources
 
