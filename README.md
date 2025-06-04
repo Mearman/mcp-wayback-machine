@@ -148,6 +148,38 @@ npm run build  # Build for production
 - Cache responses when possible
 - Include descriptive User-Agent header
 
+## Authenticated APIs (Not Implemented)
+
+For completeness, here are Internet Archive APIs that require authentication but are **not included** in this MCP server:
+
+### S3-Compatible API (IAS3)
+- **Authentication**: S3-style access keys from `https://archive.org/account/s3.php`
+- **Features**: Upload files, modify metadata, create items, manage collections
+- **Documentation**: [Internet Archive Python Library](https://archive.org/developers/internetarchive/)
+
+### Authenticated Search API
+- **Authentication**: S3 credentials
+- **Features**: Advanced search capabilities, higher rate limits
+- **Access**: Requires Internet Archive account
+
+### Save Page Now 2 (SPN2) - Enhanced Features
+- **Authentication**: Partnership agreement typically required
+- **Features**: Bulk captures, priority processing, higher rate limits
+- **Documentation**: [SPN2 API](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)
+
+### Partner/Bulk Access APIs
+- **Authentication**: Special partnership agreement
+- **Features**: Bulk downloads, custom data exports, direct database access
+- **Access**: Contact Internet Archive directly
+
+### Getting API Keys
+1. Create account at [archive.org](https://archive.org)
+2. Visit [S3 API page](https://archive.org/account/s3.php) (requires login)
+3. Generate Access Key and Secret Key pair
+4. Configure using `ia configure` command or manual configuration
+
+**Note**: This MCP server focuses on public, keyless APIs to maintain simplicity and avoid credential management.
+
 ## License
 
 MIT
