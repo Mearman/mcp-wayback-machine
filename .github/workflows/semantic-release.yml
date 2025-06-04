@@ -98,6 +98,7 @@ jobs:
         run: |
           # Update package name for GitHub Packages
           npm pkg set name="@${{ github.repository_owner }}/mcp-wayback-machine"
-          npm publish --access public --provenance
+          # Skip prepublishOnly script to avoid running tests with modified package name
+          npm publish --access public --provenance --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
