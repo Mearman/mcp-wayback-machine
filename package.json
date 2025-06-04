@@ -37,7 +37,15 @@
 		"registry": "https://registry.npmjs.org/",
 		"provenance": true
 	},
-	"files": ["dist", "LICENSE", "README.md", "CHANGELOG.md"],
+	"files": [
+		"dist/**/*.js",
+		"dist/**/*.d.ts",
+		"dist/**/*.map",
+		"!dist/**/*.test.*",
+		"LICENSE",
+		"README.md",
+		"CHANGELOG.md"
+	],
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.12.1",
 		"zod": "^3.25.51"
