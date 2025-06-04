@@ -68,11 +68,7 @@ Thumbs.db
 *.swo
 *~
 .idea/
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode/
 
 # Temporary files
 *.tmp
