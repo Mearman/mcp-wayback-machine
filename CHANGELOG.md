@@ -1,3 +1,36 @@
+# 1.0.0 (2025-06-05)
+
+
+### Bug Fixes
+
+* add packageManager field for Yarn 4 compatibility ([dc1de05](https://github.com/Mearman/mcp-wayback-machine/commit/dc1de05a1a856fd666d9c7711626c664fe249c19))
+* add version detection for GitHub Packages publishing ([9eecb8b](https://github.com/Mearman/mcp-wayback-machine/commit/9eecb8b8b5b599ae48a1a0d5b78ce0c95dc94455))
+* convert bin field to object format for npm compatibility ([9f5ee8a](https://github.com/Mearman/mcp-wayback-machine/commit/9f5ee8ad7b1b1ae4c0cabc6ed5109aaea9b50073))
+* replace GitHub license badge with CC BY-NC-SA 4.0 badge ([87a8c91](https://github.com/Mearman/mcp-wayback-machine/commit/87a8c91af3f03befbf0f34fc131c003d4697f9eb))
+* resolve all linting issues ([f2fa7c2](https://github.com/Mearman/mcp-wayback-machine/commit/f2fa7c29555ff708fb82771f4cf1f3cba7c0b3ed))
+* resolve test failures and version compatibility issues ([660663d](https://github.com/Mearman/mcp-wayback-machine/commit/660663dc74b3feb7760fb68898719779fc0fb023))
+* resolve timeout test race condition ([8a6dea1](https://github.com/Mearman/mcp-wayback-machine/commit/8a6dea17ced800eb6bf9826be3473aa767406db6))
+* resolve TypeScript errors in test files ([8e0b7fc](https://github.com/Mearman/mcp-wayback-machine/commit/8e0b7fcb0d552ab58bec81dad2d82e2bff52ae15))
+* restore bin field as object for proper CLI naming ([14a3c69](https://github.com/Mearman/mcp-wayback-machine/commit/14a3c69c18a3d1cf5b38e32bbf28bd153155ab4e))
+* skip prepublishOnly script for GitHub Packages publish ([9e4513b](https://github.com/Mearman/mcp-wayback-machine/commit/9e4513bae41973dbc50ab0fc966e07a45bb7c432))
+* use lowercase package name and correct registry for GitHub Packages ([8a8d353](https://github.com/Mearman/mcp-wayback-machine/commit/8a8d3538ade9d4d8ad1292ac8567bb8d36acaf89))
+* use space indentation for markdown files ([58b359b](https://github.com/Mearman/mcp-wayback-machine/commit/58b359b7dc2b561aba1cc45ef95405d87825756d))
+
+
+### Features
+
+* add bin field to enable npx invocation ([1c48881](https://github.com/Mearman/mcp-wayback-machine/commit/1c48881effe427cf3b9bacd9ce32f78912d1a267))
+* add CLI support for direct command-line usage ([cf7ab50](https://github.com/Mearman/mcp-wayback-machine/commit/cf7ab50f8d99b132d8f7a8a740e23bf00e1516bd))
+* apply CC BY-NC-SA 4.0 license with full license file and README badge ([e8c9980](https://github.com/Mearman/mcp-wayback-machine/commit/e8c998056d3e9cbca272204d83c905478a7c9fc6))
+* implement initial MCP server with tool definitions ([377b6e0](https://github.com/Mearman/mcp-wayback-machine/commit/377b6e02773f8ad59115f0097a69201ea8028e84))
+* implement Wayback Machine API integration ([14d70c1](https://github.com/Mearman/mcp-wayback-machine/commit/14d70c1161e0a8cf78dd6011d670007419011c34))
+* initial project setup with plan for Wayback Machine MCP server ([f265ed8](https://github.com/Mearman/mcp-wayback-machine/commit/f265ed824184f009f1d39a6716632337ae1e58c3))
+
+
+### BREAKING CHANGES
+
+* The tool now checks for CLI arguments and will run in CLI mode if any are provided
+
 # [2.0.0](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.4...v2.0.0) (2025-06-05)
 
 
