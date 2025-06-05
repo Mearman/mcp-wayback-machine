@@ -27,9 +27,10 @@ describe('Build artifact integration tests', () => {
 			});
 		});
 
-		// Start the server
+		// Start the server in MCP mode (no TTY, no extra args)
 		serverProcess = spawn('node', [join(__dirname, '../dist/index.js')], {
 			stdio: ['pipe', 'pipe', 'pipe'],
+			env: { ...process.env, NODE_ENV: 'test' },
 		});
 
 		// Capture output
