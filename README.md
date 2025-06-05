@@ -16,6 +16,8 @@
 
 An MCP (Model Context Protocol) server and CLI tool for interacting with the Internet Archive's Wayback Machine without requiring API keys.
 
+**Built with**: [MCP TypeScript Template](https://github.com/Mearman/mcp-template)
+
 ## Overview
 
 This tool can be used in two ways:
@@ -30,12 +32,15 @@ Features:
 
 ## Features
 
-- **No API keys required** - Uses public Wayback Machine endpoints
-- **Save pages** - Archive any publicly accessible URL
-- **Retrieve archives** - Get archived versions with optional timestamps
-- **Archive statistics** - Get capture counts and yearly statistics
-- **Search archives** - Query available snapshots with date filtering
-- **Rate limiting** - Built-in rate limiting to respect service limits
+- 🔐 **No API keys required** - Uses public Wayback Machine endpoints
+- 💾 **Save pages** - Archive any publicly accessible URL
+- 🔄 **Retrieve archives** - Get archived versions with optional timestamps
+- 📊 **Archive statistics** - Get capture counts and yearly statistics
+- 🔍 **Search archives** - Query available snapshots with date filtering
+- ⏱️ **Rate limiting** - Built-in rate limiting to respect service limits
+- 💻 **Dual mode** - Use as MCP server or standalone CLI tool
+- 🎨 **Rich CLI output** - Colorized output with progress indicators
+- 🔒 **TypeScript** - Full type safety with Zod validation
 
 ## Tools
 
@@ -222,16 +227,83 @@ Add to your Claude Desktop settings:
 
 ## Development
 
+### Available Commands
+
 ```bash
-yarn dev       # Run in development mode with hot reload
-yarn test      # Run tests  
-yarn test:watch # Run tests in watch mode
-yarn build     # Build for production
-yarn start     # Run production build
+yarn dev         # Run in development mode with hot reload
+yarn test        # Run tests with coverage
+yarn test:watch  # Run tests in watch mode
+yarn build       # Build for production
+yarn start       # Run production build
+yarn lint        # Check code style
+yarn lint:fix    # Auto-fix code style issues
+yarn format      # Format code with Biome
 ```
 
 ### Testing
-The project uses Vitest for testing. Tests are located alongside source files with `.test.ts` extensions.
+
+The project uses Vitest for testing with the following features:
+- Unit tests for all tools and utilities
+- Integration tests for CLI commands
+- Coverage reporting with c8
+- Tests located alongside source files (`.test.ts`)
+
+Run tests:
+```bash
+# Run all tests with coverage
+yarn test
+
+# Run tests in watch mode during development
+yarn test:watch
+
+# Run CI tests with JSON reporter
+yarn test:ci
+```
+
+## Examples
+
+### Using with Claude Desktop
+
+Once configured, you can ask Claude to:
+- "Save https://example.com to the Wayback Machine"
+- "Find archived versions of https://example.com from 2023"
+- "Check if https://example.com has been archived"
+- "Get the latest archived version of https://example.com"
+
+### CLI Script Examples
+
+```bash
+# Archive multiple URLs
+for url in "https://example.com" "https://example.org"; do
+  wayback save "$url"
+  sleep 5  # Be respectful with rate limiting
+done
+
+# Check if a URL was archived today
+wayback search "https://example.com" --from $(date +%Y-%m-%d) --to $(date +%Y-%m-%d)
+
+# Export archive data
+wayback search "https://example.com" --limit 100 > archives.txt
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"URL not found in archive"**: The URL may not have been archived yet. Try saving it first.
+2. **Rate limit errors**: Add delays between requests or reduce request frequency.
+3. **Connection timeouts**: Check your internet connection and try again.
+4. **Invalid timestamp format**: Use YYYYMMDDhhmmss format (e.g., 20231225120000).
+
+### Debug Mode
+
+```bash
+# Enable debug output
+DEBUG=* wayback save https://example.com
+
+# Check MCP server logs
+DEBUG=* node dist/index.js
+```
 
 ## Resources
 
@@ -248,6 +320,10 @@ The project uses Vitest for testing. Tests are located alongside source files wi
 - Use specific date ranges to reduce CDX result sets
 - Cache responses when possible
 - Include descriptive User-Agent header
+
+### Community
+- [MCP Discord](https://discord.gg/mcp) - Get help and share your experience
+- [Internet Archive Forum](https://archive.org/about/forum.php) - Wayback Machine discussions
 
 ## Authenticated APIs (Not Implemented)
 
