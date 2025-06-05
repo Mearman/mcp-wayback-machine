@@ -4352,6 +4352,7 @@ __metadata:
     zod: "npm:^3.25.51"
   bin:
     mcp-wayback-machine: dist/index.js
+    wayback: dist/index.js
   languageName: unknown
   linkType: soft
 
