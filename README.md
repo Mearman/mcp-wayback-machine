@@ -4,11 +4,15 @@
 [![GitHub](https://img.shields.io/github/license/Mearman/mcp-wayback-machine)](https://github.com/Mearman/mcp-wayback-machine)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Mearman/mcp-wayback-machine/ci.yml?branch=main)](https://github.com/Mearman/mcp-wayback-machine/actions)
 
-An MCP (Model Context Protocol) server for interacting with the Internet Archive's Wayback Machine without requiring API keys.
+An MCP (Model Context Protocol) server and CLI tool for interacting with the Internet Archive's Wayback Machine without requiring API keys.
 
 ## Overview
 
-This MCP server provides tools to:
+This tool can be used in two ways:
+1. **As an MCP server** - Integrate with Claude Desktop for AI-powered interactions
+2. **As a CLI tool** - Use directly from the command line with `npx` or global installation
+
+Features:
 - Save web pages to the Wayback Machine
 - Retrieve archived versions of web pages  
 - Check archive status and statistics
@@ -100,12 +104,27 @@ mcp-wayback-machine/
 
 ## Installation
 
-### From npm
+### As a CLI Tool (Quick Start)
+
+Use directly with npx (no installation needed):
+```bash
+npx mcp-wayback-machine save https://example.com
+```
+
+Or install globally:
+```bash
+npm install -g mcp-wayback-machine
+wayback save https://example.com
+```
+
+### As an MCP Server
+
+Install for use with Claude Desktop:
 ```bash
 npm install -g mcp-wayback-machine
 ```
 
-### From source
+### From Source
 ```bash
 git clone https://github.com/Mearman/mcp-wayback-machine.git
 cd mcp-wayback-machine
@@ -114,6 +133,42 @@ yarn build
 ```
 
 ## Usage
+
+### CLI Usage
+
+The tool provides a `wayback` command (or use `npx mcp-wayback-machine`):
+
+#### Save a URL
+```bash
+wayback save https://example.com
+# or
+npx mcp-wayback-machine save https://example.com
+```
+
+#### Get an archived version
+```bash
+wayback get https://example.com
+wayback get https://example.com --timestamp 20231225120000
+wayback get https://example.com --timestamp latest
+```
+
+#### Search archives
+```bash
+wayback search https://example.com
+wayback search https://example.com --limit 20
+wayback search https://example.com --from 2023-01-01 --to 2023-12-31
+```
+
+#### Check archive status
+```bash
+wayback status https://example.com
+```
+
+#### Get help
+```bash
+wayback --help
+wayback save --help
+```
 
 ### Claude Desktop Configuration
 

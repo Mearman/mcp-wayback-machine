@@ -166,9 +166,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // Start the server
 async function main() {
-	const transport = new StdioServerTransport();
-	await server.connect(transport);
-	console.error('MCP Wayback Machine server running on stdio');
+	// Check if running as CLI (has TTY or has arguments beyond node and script)
+	const isCliMode = process.stdin.isTTY || process.argv.length > 2;
+	
+	if (isCliMode && process.argv.length > 2) {
+		// Running as CLI tool
+		const { createCLI } = await import('./cli.js');
+		const program = createCLI();
+		await program.parseAsync(process.argv);
+	} else {
+		// Running as MCP server
+		const transport = new StdioServerTransport();
+		await server.connect(transport);
+		console.error('MCP Wayback Machine server running on stdio');
+	}
 }
 
 main().catch((error) => {
