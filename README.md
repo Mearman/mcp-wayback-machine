@@ -2,7 +2,17 @@
 
 [![npm version](https://img.shields.io/npm/v/mcp-wayback-machine.svg)](https://www.npmjs.com/package/mcp-wayback-machine)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Mearman/mcp-wayback-machine/ci.yml?branch=main)](https://github.com/Mearman/mcp-wayback-machine/actions)
+[![npm downloads](https://img.shields.io/npm/dm/mcp-wayback-machine.svg)](https://www.npmjs.com/package/mcp-wayback-machine)
+
+## Build Status
+[![CI Build](https://github.com/Mearman/mcp-wayback-machine/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Mearman/mcp-wayback-machine/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-58%20passed-brightgreen)](https://github.com/Mearman/mcp-wayback-machine/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Mearman/mcp-wayback-machine/graph/badge.svg?token=YOUR_TOKEN)](https://codecov.io/gh/Mearman/mcp-wayback-machine)
+
+## Release Status
+[![Release](https://github.com/Mearman/mcp-wayback-machine/actions/workflows/semantic-release.yml/badge.svg)](https://github.com/Mearman/mcp-wayback-machine/actions/workflows/semantic-release.yml)
+[![npm publish](https://img.shields.io/badge/npm-published-brightgreen)](https://www.npmjs.com/package/mcp-wayback-machine)
+[![GitHub Package](https://img.shields.io/badge/GitHub%20Package-published-brightgreen)](https://github.com/Mearman/mcp-wayback-machine/packages)
 
 An MCP (Model Context Protocol) server and CLI tool for interacting with the Internet Archive's Wayback Machine without requiring API keys.
 
