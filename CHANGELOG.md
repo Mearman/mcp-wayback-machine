@@ -1,3 +1,20 @@
+# [2.0.0](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.4...v2.0.0) (2025-06-05)
+
+
+### Bug Fixes
+
+* replace GitHub license badge with CC BY-NC-SA 4.0 badge ([feda5a0](https://github.com/Mearman/mcp-wayback-machine/commit/feda5a0d5ee7807475118af8b2c123c4668c29f2))
+
+
+### Features
+
+* add CLI support for direct command-line usage ([94a1bf8](https://github.com/Mearman/mcp-wayback-machine/commit/94a1bf8e3dd8386b29e67bd5295f68b2f63e7d98))
+
+
+### BREAKING CHANGES
+
+* The tool now checks for CLI arguments and will run in CLI mode if any are provided
+
 ## [1.0.4](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.3...v1.0.4) (2025-06-04)
 
 
