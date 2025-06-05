@@ -1,8 +1,8 @@
-import { Command } from 'commander';
 import chalk from 'chalk';
+import { Command } from 'commander';
 import ora from 'ora';
-import { saveUrl } from './tools/save.js';
 import { getArchivedUrl } from './tools/retrieve.js';
+import { saveUrl } from './tools/save.js';
 import { searchArchives } from './tools/search.js';
 import { checkArchiveStatus } from './tools/status.js';
 
@@ -76,11 +76,11 @@ export function createCLI() {
 					url,
 					from: options.from,
 					to: options.to,
-					limit: parseInt(options.limit, 10),
+					limit: Number.parseInt(options.limit, 10),
 				});
 				if (result.success && result.results && result.results.length > 0) {
 					spinner.succeed(chalk.green(`Found ${result.totalResults} archives`));
-					console.log('\n' + chalk.bold('Archive snapshots:'));
+					console.log(`\n${chalk.bold('Archive snapshots:')}`);
 					result.results.forEach((snapshot) => {
 						console.log(chalk.gray('─'.repeat(60)));
 						console.log(chalk.blue('Date:'), snapshot.date);
@@ -112,9 +112,9 @@ export function createCLI() {
 						console.log(chalk.blue('First capture:'), result.firstCapture);
 						console.log(chalk.blue('Last capture:'), result.lastCapture);
 						if (result.yearlyCaptures) {
-							console.log('\n' + chalk.bold('Yearly captures:'));
+							console.log(`\n${chalk.bold('Yearly captures:')}`);
 							Object.entries(result.yearlyCaptures).forEach(([year, count]) => {
-								console.log(chalk.blue(year + ':'), count);
+								console.log(chalk.blue(`${year}:`), count);
 							});
 						}
 					} else {

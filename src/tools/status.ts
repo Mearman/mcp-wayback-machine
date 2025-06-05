@@ -3,9 +3,9 @@
  */
 
 import { z } from 'zod';
-import { fetchWithTimeout, HttpError, parseJsonResponse } from '../utils/http.js';
-import { validateUrl } from '../utils/validation.js';
+import { HttpError, fetchWithTimeout, parseJsonResponse } from '../utils/http.js';
 import { waybackRateLimiter } from '../utils/rate-limit.js';
+import { validateUrl } from '../utils/validation.js';
 
 export const CheckArchiveStatusSchema = z.object({
 	url: z.string().url().describe('The URL to check'),

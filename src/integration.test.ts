@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { spawn, ChildProcess } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { type ChildProcess, spawn } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe('Build artifact integration tests', () => {
 	let serverProcess: ChildProcess;
-	let serverOutput: string = '';
-	let serverError: string = '';
+	let serverOutput = '';
+	let serverError = '';
 
 	beforeAll(async () => {
 		// Build the project first
@@ -66,7 +66,7 @@ describe('Build artifact integration tests', () => {
 		};
 
 		// Send request
-		serverProcess.stdin?.write(JSON.stringify(request) + '\n');
+		serverProcess.stdin?.write(`${JSON.stringify(request)}\n`);
 
 		// Wait for response
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -78,7 +78,7 @@ describe('Build artifact integration tests', () => {
 	it('should handle malformed requests gracefully', async () => {
 		const malformedRequest = 'not json';
 
-		serverProcess.stdin?.write(malformedRequest + '\n');
+		serverProcess.stdin?.write(`${malformedRequest}\n`);
 
 		// Wait for potential error handling
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -90,9 +90,9 @@ describe('Build artifact integration tests', () => {
 
 describe('Executable permissions', () => {
 	it('should have shebang in built file', async () => {
-		const fs = await import('fs/promises');
+		const fs = await import('node:fs/promises');
 		const builtFile = join(__dirname, '../dist/index.js');
-		
+
 		const content = await fs.readFile(builtFile, 'utf-8');
 		expect(content).toMatch(/^#!/);
 		expect(content).toContain('#!/usr/bin/env node');

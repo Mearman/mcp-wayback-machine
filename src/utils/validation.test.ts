@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { validateUrl, formatTimestamp } from './validation.js';
+import { describe, expect, it } from 'vitest';
+import { formatTimestamp, validateUrl } from './validation.js';
 
 describe('validateUrl', () => {
 	it('should accept valid HTTP URLs', () => {

@@ -3,9 +3,9 @@
  */
 
 import { z } from 'zod';
-import { fetchWithTimeout, HttpError } from '../utils/http.js';
-import { validateUrl } from '../utils/validation.js';
+import { HttpError, fetchWithTimeout } from '../utils/http.js';
 import { waybackRateLimiter } from '../utils/rate-limit.js';
+import { validateUrl } from '../utils/validation.js';
 
 export const SaveUrlSchema = z.object({
 	url: z.string().url().describe('The URL to save to the Wayback Machine'),
@@ -56,7 +56,7 @@ export async function saveUrl(input: SaveUrlInput): Promise<{
 		const contentLocation = response.headers.get('Content-Location');
 		const archivedUrl = location || contentLocation;
 
-		if (archivedUrl && archivedUrl.includes('/web/')) {
+		if (archivedUrl?.includes('/web/')) {
 			// Extract timestamp from the archived URL
 			const match = archivedUrl.match(/\/web\/(\d{14})\//);
 			const timestamp = match ? match[1] : undefined;
@@ -84,7 +84,7 @@ export async function saveUrl(input: SaveUrlInput): Promise<{
 
 		// Try to parse as JSON
 		try {
-			const data = await response2.json() as SaveResponse;
+			const data = (await response2.json()) as SaveResponse;
 			return {
 				success: true,
 				message: `Successfully submitted ${validatedUrl} for archiving`,

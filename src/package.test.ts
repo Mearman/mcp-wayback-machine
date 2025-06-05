@@ -1,14 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 describe('Package configuration', () => {
-	const packageJson = JSON.parse(
-		readFileSync(join(__dirname, '../package.json'), 'utf-8')
-	);
+	const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
 
 	it('should have correct bin configuration', () => {
 		expect(packageJson.bin).toBeDefined();
@@ -38,7 +36,9 @@ describe('Package configuration', () => {
 	});
 
 	it('should have correct repository information', () => {
-		expect(packageJson.repository.url).toBe('git+https://github.com/Mearman/mcp-wayback-machine.git');
+		expect(packageJson.repository.url).toBe(
+			'git+https://github.com/Mearman/mcp-wayback-machine.git',
+		);
 		expect(packageJson.author).toBe('Joseph Mearman');
 	});
 

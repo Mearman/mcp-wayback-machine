@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { saveUrl } from './save.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as httpModule from '../utils/http.js';
 import * as rateLimitModule from '../utils/rate-limit.js';
+import { saveUrl } from './save.js';
 
 vi.mock('../utils/http.js', async () => {
 	const actual = await vi.importActual<typeof import('../utils/http.js')>('../utils/http.js');
@@ -16,7 +16,9 @@ vi.mock('../utils/rate-limit.js');
 describe('saveUrl', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue(undefined as any);
+		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue(
+			undefined as any,
+		);
 		vi.spyOn(rateLimitModule.waybackRateLimiter, 'recordRequest').mockImplementation(() => {});
 	});
 
@@ -30,20 +32,22 @@ describe('saveUrl', () => {
 				Location: '/web/20231225120000/https://example.com',
 			},
 		});
-		
+
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockResolvedValueOnce(mockResponse);
 
 		const result = await saveUrl({ url: 'https://example.com' });
 
 		expect(result.success).toBe(true);
 		expect(result.message).toContain('Successfully submitted');
-		expect(result.archivedUrl).toBe('https://web.archive.org/web/20231225120000/https://example.com');
+		expect(result.archivedUrl).toBe(
+			'https://web.archive.org/web/20231225120000/https://example.com',
+		);
 		expect(result.timestamp).toBe('20231225120000');
 	});
 
 	it('should handle rate limit errors', async () => {
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockRejectedValueOnce(
-			new httpModule.HttpError('Rate limited', 429)
+			new httpModule.HttpError('Rate limited', 429),
 		);
 
 		const result = await saveUrl({ url: 'https://example.com' });
@@ -61,11 +65,13 @@ describe('saveUrl', () => {
 
 	it('should try alternative save endpoint', async () => {
 		const mockResponse1 = new Response('', { status: 200 });
-		const mockResponse2 = new Response(JSON.stringify({
-			job_id: '12345',
-			url: 'https://web.archive.org/web/20231225120000/https://example.com',
-			timestamp: '20231225120000'
-		}));
+		const mockResponse2 = new Response(
+			JSON.stringify({
+				job_id: '12345',
+				url: 'https://web.archive.org/web/20231225120000/https://example.com',
+				timestamp: '20231225120000',
+			}),
+		);
 
 		vi.spyOn(httpModule, 'fetchWithTimeout')
 			.mockResolvedValueOnce(mockResponse1)
@@ -84,19 +90,19 @@ describe('saveUrl', () => {
 				'Content-Location': '/web/20231225120000/https://example.com',
 			},
 		});
-		
+
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockResolvedValueOnce(mockResponse);
 
 		const result = await saveUrl({ url: 'https://example.com' });
 
 		expect(result.success).toBe(true);
-		expect(result.archivedUrl).toBe('https://web.archive.org/web/20231225120000/https://example.com');
+		expect(result.archivedUrl).toBe(
+			'https://web.archive.org/web/20231225120000/https://example.com',
+		);
 	});
 
 	it('should handle generic errors', async () => {
-		vi.spyOn(httpModule, 'fetchWithTimeout').mockRejectedValueOnce(
-			new Error('Network error')
-		);
+		vi.spyOn(httpModule, 'fetchWithTimeout').mockRejectedValueOnce(new Error('Network error'));
 
 		const result = await saveUrl({ url: 'https://example.com' });
 

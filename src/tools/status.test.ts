@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { checkArchiveStatus } from './status.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as httpModule from '../utils/http.js';
 import * as rateLimitModule from '../utils/rate-limit.js';
+import { checkArchiveStatus } from './status.js';
 
 vi.mock('../utils/http.js', async () => {
 	const actual = await vi.importActual<typeof import('../utils/http.js')>('../utils/http.js');
@@ -16,7 +16,9 @@ vi.mock('../utils/rate-limit.js');
 describe('checkArchiveStatus', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue(undefined as any);
+		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue(
+			undefined as any,
+		);
 		vi.spyOn(rateLimitModule.waybackRateLimiter, 'recordRequest').mockImplementation(() => {});
 	});
 
@@ -25,15 +27,17 @@ describe('checkArchiveStatus', () => {
 	});
 
 	it('should check archive status successfully', async () => {
-		const mockResponse = new Response(JSON.stringify({
-			first_ts: '20100101120000',
-			last_ts: '20231225120000',
-			years: {
-				'2023': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120],
-				'2022': [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
-			},
-			captures: 500
-		}));
+		const mockResponse = new Response(
+			JSON.stringify({
+				first_ts: '20100101120000',
+				last_ts: '20231225120000',
+				years: {
+					'2023': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120],
+					'2022': [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60],
+				},
+				captures: 500,
+			}),
+		);
 
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockResolvedValueOnce(mockResponse);
 		vi.spyOn(httpModule, 'parseJsonResponse').mockResolvedValueOnce({
@@ -41,9 +45,9 @@ describe('checkArchiveStatus', () => {
 			last_ts: '20231225120000',
 			years: {
 				'2023': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120],
-				'2022': [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+				'2022': [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60],
 			},
-			captures: 500
+			captures: 500,
 		});
 
 		const result = await checkArchiveStatus({ url: 'https://example.com' });
@@ -55,7 +59,7 @@ describe('checkArchiveStatus', () => {
 		expect(result.totalCaptures).toBe(500);
 		expect(result.yearlyCaptures).toEqual({
 			'2023': 780,
-			'2022': 390
+			'2022': 390,
 		});
 	});
 
@@ -64,15 +68,17 @@ describe('checkArchiveStatus', () => {
 
 		vi.spyOn(httpModule, 'fetchWithTimeout')
 			.mockResolvedValueOnce(mockResponse)
-			.mockResolvedValueOnce(new Response(JSON.stringify({
-				archived_snapshots: {}
-			})));
-		
-		vi.spyOn(httpModule, 'parseJsonResponse')
-			.mockResolvedValueOnce({})
-			.mockResolvedValueOnce({
-				archived_snapshots: {}
-			});
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						archived_snapshots: {},
+					}),
+				),
+			);
+
+		vi.spyOn(httpModule, 'parseJsonResponse').mockResolvedValueOnce({}).mockResolvedValueOnce({
+			archived_snapshots: {},
+		});
 
 		const result = await checkArchiveStatus({ url: 'https://example.com' });
 
@@ -84,28 +90,30 @@ describe('checkArchiveStatus', () => {
 
 	it('should fallback to availability API', async () => {
 		const mockResponse1 = new Response(JSON.stringify({}));
-		const mockResponse2 = new Response(JSON.stringify({
-			archived_snapshots: {
-				closest: {
-					available: true,
-					timestamp: '20231225120000'
-				}
-			}
-		}));
+		const mockResponse2 = new Response(
+			JSON.stringify({
+				archived_snapshots: {
+					closest: {
+						available: true,
+						timestamp: '20231225120000',
+					},
+				},
+			}),
+		);
 
 		vi.spyOn(httpModule, 'fetchWithTimeout')
 			.mockResolvedValueOnce(mockResponse1)
 			.mockResolvedValueOnce(mockResponse2);
-		
+
 		vi.spyOn(httpModule, 'parseJsonResponse')
 			.mockResolvedValueOnce({})
 			.mockResolvedValueOnce({
 				archived_snapshots: {
 					closest: {
 						available: true,
-						timestamp: '20231225120000'
-					}
-				}
+						timestamp: '20231225120000',
+					},
+				},
 			});
 
 		const result = await checkArchiveStatus({ url: 'https://example.com' });
@@ -117,7 +125,7 @@ describe('checkArchiveStatus', () => {
 
 	it('should handle 404 errors', async () => {
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockRejectedValueOnce(
-			new httpModule.HttpError('Not found', 404)
+			new httpModule.HttpError('Not found', 404),
 		);
 
 		const result = await checkArchiveStatus({ url: 'https://example.com' });
@@ -130,7 +138,7 @@ describe('checkArchiveStatus', () => {
 
 	it('should handle other HTTP errors', async () => {
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockRejectedValueOnce(
-			new httpModule.HttpError('Server error', 500)
+			new httpModule.HttpError('Server error', 500),
 		);
 
 		const result = await checkArchiveStatus({ url: 'https://example.com' });
@@ -149,17 +157,19 @@ describe('checkArchiveStatus', () => {
 	});
 
 	it('should handle short timestamps', async () => {
-		const mockResponse = new Response(JSON.stringify({
-			first_ts: '2010',
-			last_ts: '2023',
-			captures: 10
-		}));
+		const mockResponse = new Response(
+			JSON.stringify({
+				first_ts: '2010',
+				last_ts: '2023',
+				captures: 10,
+			}),
+		);
 
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockResolvedValueOnce(mockResponse);
 		vi.spyOn(httpModule, 'parseJsonResponse').mockResolvedValueOnce({
 			first_ts: '2010',
 			last_ts: '2023',
-			captures: 10
+			captures: 10,
 		});
 
 		const result = await checkArchiveStatus({ url: 'https://example.com' });

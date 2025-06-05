@@ -8,9 +8,9 @@ import {
 	McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 
+import { GetArchivedUrlSchema, getArchivedUrl } from './tools/retrieve.js';
 // Import tools
 import { SaveUrlSchema, saveUrl } from './tools/save.js';
-import { GetArchivedUrlSchema, getArchivedUrl } from './tools/retrieve.js';
 import { SearchArchivesSchema, searchArchives } from './tools/search.js';
 import { CheckArchiveStatusSchema, checkArchiveStatus } from './tools/status.js';
 
@@ -64,7 +64,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			case 'save_url': {
 				const input = SaveUrlSchema.parse(args);
 				const result = await saveUrl(input);
-				
+
 				let text = result.message;
 				if (result.archivedUrl) {
 					text += `\n\nArchived URL: ${result.archivedUrl}`;
@@ -75,7 +75,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				if (result.jobId) {
 					text += `\nJob ID: ${result.jobId}`;
 				}
-				
+
 				return {
 					content: [{ type: 'text', text }],
 				};
@@ -84,7 +84,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			case 'get_archived_url': {
 				const input = GetArchivedUrlSchema.parse(args);
 				const result = await getArchivedUrl(input);
-				
+
 				let text = result.message;
 				if (result.archivedUrl) {
 					text += `\n\nArchived URL: ${result.archivedUrl}`;
@@ -95,7 +95,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				if (result.available !== undefined) {
 					text += `\nAvailable: ${result.available ? 'Yes' : 'No'}`;
 				}
-				
+
 				return {
 					content: [{ type: 'text', text }],
 				};
@@ -104,7 +104,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			case 'search_archives': {
 				const input = SearchArchivesSchema.parse(args);
 				const result = await searchArchives(input);
-				
+
 				let text = result.message;
 				if (result.results && result.results.length > 0) {
 					text += '\n\nResults:';
@@ -115,7 +115,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 						text += `\n  Type: ${archive.mimeType}`;
 					}
 				}
-				
+
 				return {
 					content: [{ type: 'text', text }],
 				};
@@ -124,7 +124,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			case 'check_archive_status': {
 				const input = CheckArchiveStatusSchema.parse(args);
 				const result = await checkArchiveStatus(input);
-				
+
 				let text = result.message;
 				if (result.isArchived) {
 					if (result.firstCapture) {
@@ -143,7 +143,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 						}
 					}
 				}
-				
+
 				return {
 					content: [{ type: 'text', text }],
 				};
@@ -156,7 +156,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 		if (error instanceof McpError) {
 			throw error;
 		}
-		
+
 		throw new McpError(
 			ErrorCode.InternalError,
 			error instanceof Error ? error.message : 'Unknown error occurred',
@@ -168,7 +168,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
 	// Check if running as CLI (has TTY or has arguments beyond node and script)
 	const isCliMode = process.stdin.isTTY || process.argv.length > 2;
-	
+
 	if (isCliMode && process.argv.length > 2) {
 		// Running as CLI tool
 		const { createCLI } = await import('./cli.js');

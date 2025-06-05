@@ -23,10 +23,7 @@ export class HttpError extends Error {
 /**
  * Wrapper around fetch with timeout support and error handling
  */
-export async function fetchWithTimeout(
-	url: string,
-	options: FetchOptions = {},
-): Promise<Response> {
+export async function fetchWithTimeout(url: string, options: FetchOptions = {}): Promise<Response> {
 	const { timeout = 30000, ...fetchOptions } = options;
 
 	const controller = new AbortController();
@@ -69,7 +66,7 @@ export async function fetchWithTimeout(
  */
 export async function parseJsonResponse<T>(response: Response): Promise<T> {
 	try {
-		return await response.json() as T;
+		return (await response.json()) as T;
 	} catch (error) {
 		throw new HttpError('Failed to parse JSON response');
 	}

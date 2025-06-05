@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCLI } from './cli.js';
-import * as saveModule from './tools/save.js';
 import * as retrieveModule from './tools/retrieve.js';
+import * as saveModule from './tools/save.js';
 import * as searchModule from './tools/search.js';
 import * as statusModule from './tools/status.js';
 
@@ -52,9 +52,9 @@ describe('CLI', () => {
 		const program = createCLI();
 		await program.parseAsync(['node', 'cli', 'get', 'https://example.com']);
 
-		expect(retrieveModule.getArchivedUrl).toHaveBeenCalledWith({ 
+		expect(retrieveModule.getArchivedUrl).toHaveBeenCalledWith({
 			url: 'https://example.com',
-			timestamp: undefined 
+			timestamp: undefined,
 		});
 	});
 
@@ -62,21 +62,23 @@ describe('CLI', () => {
 		vi.spyOn(searchModule, 'searchArchives').mockResolvedValue({
 			success: true,
 			message: 'Found archives',
-			results: [{
-				url: 'https://example.com',
-				archivedUrl: 'https://web.archive.org/web/123/https://example.com',
-				timestamp: '123',
-				date: '2023-01-01',
-				statusCode: '200',
-				mimeType: 'text/html',
-			}],
+			results: [
+				{
+					url: 'https://example.com',
+					archivedUrl: 'https://web.archive.org/web/123/https://example.com',
+					timestamp: '123',
+					date: '2023-01-01',
+					statusCode: '200',
+					mimeType: 'text/html',
+				},
+			],
 			totalResults: 1,
 		});
 
 		const program = createCLI();
 		await program.parseAsync(['node', 'cli', 'search', 'https://example.com']);
 
-		expect(searchModule.searchArchives).toHaveBeenCalledWith({ 
+		expect(searchModule.searchArchives).toHaveBeenCalledWith({
 			url: 'https://example.com',
 			limit: 10,
 		});
@@ -95,8 +97,8 @@ describe('CLI', () => {
 		const program = createCLI();
 		await program.parseAsync(['node', 'cli', 'status', 'https://example.com']);
 
-		expect(statusModule.checkArchiveStatus).toHaveBeenCalledWith({ 
-			url: 'https://example.com' 
+		expect(statusModule.checkArchiveStatus).toHaveBeenCalledWith({
+			url: 'https://example.com',
 		});
 	});
 });

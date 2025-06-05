@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { searchArchives } from './search.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as httpModule from '../utils/http.js';
 import * as rateLimitModule from '../utils/rate-limit.js';
+import { searchArchives } from './search.js';
 
 vi.mock('../utils/http.js', async () => {
 	const actual = await vi.importActual<typeof import('../utils/http.js')>('../utils/http.js');
@@ -16,7 +16,9 @@ vi.mock('../utils/rate-limit.js');
 describe('searchArchives', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue(undefined as any);
+		vi.spyOn(rateLimitModule.waybackRateLimiter, 'waitForSlot').mockResolvedValue(
+			undefined as any,
+		);
 		vi.spyOn(rateLimitModule.waybackRateLimiter, 'recordRequest').mockImplementation(() => {});
 	});
 
@@ -25,15 +27,33 @@ describe('searchArchives', () => {
 	});
 
 	it('should search archives successfully', async () => {
-		const mockResponse = new Response(JSON.stringify([
-			['urlkey', 'timestamp', 'original', 'mimetype', 'statuscode', 'digest', 'length'],
-			['com,example)/', '20231225120000', 'https://example.com/', 'text/html', '200', 'ABC123', '1234']
-		]));
+		const mockResponse = new Response(
+			JSON.stringify([
+				['urlkey', 'timestamp', 'original', 'mimetype', 'statuscode', 'digest', 'length'],
+				[
+					'com,example)/',
+					'20231225120000',
+					'https://example.com/',
+					'text/html',
+					'200',
+					'ABC123',
+					'1234',
+				],
+			]),
+		);
 
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockResolvedValueOnce(mockResponse);
 		vi.spyOn(httpModule, 'parseJsonResponse').mockResolvedValueOnce([
 			['urlkey', 'timestamp', 'original', 'mimetype', 'statuscode', 'digest', 'length'],
-			['com,example)/', '20231225120000', 'https://example.com/', 'text/html', '200', 'ABC123', '1234']
+			[
+				'com,example)/',
+				'20231225120000',
+				'https://example.com/',
+				'text/html',
+				'200',
+				'ABC123',
+				'1234',
+			],
 		]);
 
 		const result = await searchArchives({ url: 'https://example.com', limit: 10 });
@@ -46,19 +66,21 @@ describe('searchArchives', () => {
 			timestamp: '20231225120000',
 			date: '2023-12-25 12:00:00',
 			statusCode: '200',
-			mimeType: 'text/html'
+			mimeType: 'text/html',
 		});
 		expect(result.totalResults).toBe(1);
 	});
 
 	it('should handle empty results', async () => {
-		const mockResponse = new Response(JSON.stringify([
-			['urlkey', 'timestamp', 'original', 'mimetype', 'statuscode', 'digest', 'length']
-		]));
+		const mockResponse = new Response(
+			JSON.stringify([
+				['urlkey', 'timestamp', 'original', 'mimetype', 'statuscode', 'digest', 'length'],
+			]),
+		);
 
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockResolvedValueOnce(mockResponse);
 		vi.spyOn(httpModule, 'parseJsonResponse').mockResolvedValueOnce([
-			['urlkey', 'timestamp', 'original', 'mimetype', 'statuscode', 'digest', 'length']
+			['urlkey', 'timestamp', 'original', 'mimetype', 'statuscode', 'digest', 'length'],
 		]);
 
 		const result = await searchArchives({ url: 'https://example.com', limit: 10 });
@@ -75,32 +97,32 @@ describe('searchArchives', () => {
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockResolvedValueOnce(mockResponse);
 		vi.spyOn(httpModule, 'parseJsonResponse').mockResolvedValueOnce([['headers']]);
 
-		await searchArchives({ 
+		await searchArchives({
 			url: 'https://example.com',
 			from: '2023-01-01',
 			to: '2023-12-31',
-			limit: 5
+			limit: 5,
 		});
 
 		expect(httpModule.fetchWithTimeout).toHaveBeenCalledWith(
 			expect.stringContaining('from=20230101'),
-			expect.any(Object)
+			expect.any(Object),
 		);
 		expect(httpModule.fetchWithTimeout).toHaveBeenCalledWith(
 			expect.stringContaining('to=20231231'),
-			expect.any(Object)
+			expect.any(Object),
 		);
 		expect(httpModule.fetchWithTimeout).toHaveBeenCalledWith(
 			expect.stringContaining('limit=5'),
-			expect.any(Object)
+			expect.any(Object),
 		);
 	});
 
 	it('should handle invalid date formats', async () => {
-		const result = await searchArchives({ 
+		const result = await searchArchives({
 			url: 'https://example.com',
 			from: 'invalid-date',
-			limit: 10
+			limit: 10,
 		});
 
 		expect(result.success).toBe(false);
@@ -109,7 +131,7 @@ describe('searchArchives', () => {
 
 	it('should handle 404 errors', async () => {
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockRejectedValueOnce(
-			new httpModule.HttpError('Not found', 404)
+			new httpModule.HttpError('Not found', 404),
 		);
 
 		const result = await searchArchives({ url: 'https://example.com', limit: 10 });
@@ -121,7 +143,7 @@ describe('searchArchives', () => {
 
 	it('should handle other HTTP errors', async () => {
 		vi.spyOn(httpModule, 'fetchWithTimeout').mockRejectedValueOnce(
-			new httpModule.HttpError('Server error', 500)
+			new httpModule.HttpError('Server error', 500),
 		);
 
 		const result = await searchArchives({ url: 'https://example.com', limit: 10 });

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { fetchWithTimeout, HttpError, parseJsonResponse } from './http.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HttpError, fetchWithTimeout, parseJsonResponse } from './http.js';
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -22,9 +22,9 @@ describe('fetchWithTimeout', () => {
 	});
 
 	it('should handle HTTP errors', async () => {
-		const mockResponse = new Response('Not Found', { 
+		const mockResponse = new Response('Not Found', {
 			status: 404,
-			statusText: 'Not Found'
+			statusText: 'Not Found',
 		});
 		vi.mocked(fetch).mockResolvedValueOnce(mockResponse);
 
@@ -35,7 +35,7 @@ describe('fetchWithTimeout', () => {
 		// Create an abort controller to simulate timeout
 		const abortError = new Error('The operation was aborted');
 		abortError.name = 'AbortError';
-		
+
 		vi.mocked(fetch).mockRejectedValueOnce(abortError);
 
 		await expect(fetchWithTimeout('https://example.com', { timeout: 100 })).rejects.toThrow(
