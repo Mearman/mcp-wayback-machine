@@ -2,6 +2,8 @@
  * HTTP utilities for making API calls to the Wayback Machine
  */
 
+import { configurableFetch } from './fetch.js';
+
 interface FetchOptions {
 	method?: string;
 	headers?: Record<string, string>;
@@ -30,7 +32,7 @@ export async function fetchWithTimeout(url: string, options: FetchOptions = {}):
 	const timeoutId = setTimeout(() => controller.abort(), timeout);
 
 	try {
-		const response = await fetch(url, {
+		const response = await configurableFetch.fetch(url, {
 			...fetchOptions,
 			signal: controller.signal,
 		});

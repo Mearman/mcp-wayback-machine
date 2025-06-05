@@ -55,8 +55,10 @@
 		"@modelcontextprotocol/sdk": "^1.12.1",
 		"chalk": "^5.4.1",
 		"commander": "^14.0.0",
+		"node-fetch-cache": "^5.0.2",
 		"ora": "^8.2.0",
-		"zod": "^3.25.51"
+		"zod": "^3.25.51",
+		"zod-to-json-schema": "^3.24.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
