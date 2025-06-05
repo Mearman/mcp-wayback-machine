@@ -81,13 +81,13 @@ export function createCLI() {
 				if (result.success && result.results && result.results.length > 0) {
 					spinner.succeed(chalk.green(`Found ${result.totalResults} archives`));
 					console.log(`\n${chalk.bold('Archive snapshots:')}`);
-					result.results.forEach((snapshot) => {
+					for (const snapshot of result.results) {
 						console.log(chalk.gray('─'.repeat(60)));
 						console.log(chalk.blue('Date:'), snapshot.date);
 						console.log(chalk.blue('URL:'), snapshot.archivedUrl);
 						console.log(chalk.blue('Status:'), snapshot.statusCode);
 						console.log(chalk.blue('Type:'), snapshot.mimeType);
-					});
+					}
 				} else {
 					spinner.fail(chalk.yellow(result.message || 'No archives found'));
 				}
@@ -113,9 +113,9 @@ export function createCLI() {
 						console.log(chalk.blue('Last capture:'), result.lastCapture);
 						if (result.yearlyCaptures) {
 							console.log(`\n${chalk.bold('Yearly captures:')}`);
-							Object.entries(result.yearlyCaptures).forEach(([year, count]) => {
+							for (const [year, count] of Object.entries(result.yearlyCaptures)) {
 								console.log(chalk.blue(`${year}:`), count);
-							});
+							}
 						}
 					} else {
 						spinner.warn(chalk.yellow('URL has not been archived'));

@@ -11,8 +11,8 @@ vi.mock('./tools/search.js');
 vi.mock('./tools/status.js');
 
 describe('CLI', () => {
-	let consoleLogSpy: any;
-	let consoleErrorSpy: any;
+	let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+	let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
 	beforeEach(() => {
 		vi.clearAllMocks();

@@ -7,6 +7,23 @@ import { HttpError, fetchWithTimeout, parseJsonResponse } from '../utils/http.js
 import { waybackRateLimiter } from '../utils/rate-limit.js';
 import { validateUrl } from '../utils/validation.js';
 
+interface AvailabilityResponse {
+	archivedSnapshots?: {
+		closest?: {
+			available: boolean;
+			timestamp: string;
+			url?: string;
+		};
+	};
+	archived_snapshots?: {
+		closest?: {
+			available: boolean;
+			timestamp: string;
+			url?: string;
+		};
+	};
+}
+
 export const CheckArchiveStatusSchema = z.object({
 	url: z.string().url().describe('The URL to check'),
 });
@@ -98,7 +115,7 @@ export async function checkArchiveStatus(input: CheckArchiveStatusInput): Promis
 			},
 		});
 
-		const availData = await parseJsonResponse<any>(availResponse);
+		const availData = await parseJsonResponse<AvailabilityResponse>(availResponse);
 
 		if (availData.archived_snapshots?.closest?.available) {
 			return {
