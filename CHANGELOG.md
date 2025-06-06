@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Mearman/mcp-template/compare/v1.0.0...v1.0.1) (2025-06-06)
+
+
+### Bug Fixes
+
+* add yarn.lock and use immutable installs for reproducible builds ([c873248](https://github.com/Mearman/mcp-template/commit/c8732481dc6b8519c0b0b6813099d4fbb3ffc274))
+
 # 1.0.0 (2025-06-06)
 
 

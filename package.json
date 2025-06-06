@@ -1,6 +1,6 @@
 {
 	"name": "mcp-template",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Template for building MCP (Model Context Protocol) servers with TypeScript",
 	"main": "dist/index.js",
 	"bin": "dist/index.js",
