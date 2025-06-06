@@ -1,0 +1,149 @@
+# Template Synchronization Configuration
+# Defines which files should be synced from template to derived repositories
+
+template_version: "2.0.0"
+
+# Files to sync (preserving project customizations)
+sync_files:
+  # Configuration files - merge intelligently
+  - path: "tsconfig.json"
+    action: "merge"
+    preserve_fields: ["name", "description", "version"]
+  
+  - path: "biome.json" 
+    action: "replace"
+    
+  - path: "vitest.config.ts"
+    action: "replace"
+    
+  - path: ".editorconfig"
+    action: "replace"
+    
+  - path: ".gitignore"
+    action: "merge"
+    
+  - path: ".yarnrc.yml"
+    action: "replace"
+
+  # Shared utilities and patterns
+  - path: "shared/utils/fetch.ts"
+    action: "sync_shared_utils"
+    target: "src/utils/fetch.ts"
+    
+  - path: "shared/patterns/mcp-server-base.ts"
+    action: "copy_if_missing"
+    target: "src/utils/mcp-server-base.ts"
+    
+  # Shared dependencies
+  - path: "shared/dependencies/core.json"
+    action: "sync_dependencies"
+    category: "core"
+    
+  - path: "shared/dependencies/optional.json"
+    action: "detect_and_suggest"
+    category: "optional"
+
+  # Package.json - merge selectively  
+  - path: "package.json"
+    action: "merge"
+    preserve_fields: 
+      - "name"
+      - "version" 
+      - "description"
+      - "author"
+      - "repository"
+      - "dependencies"
+      - "main"
+      - "bin"
+    sync_fields:
+      - "devDependencies"
+      - "scripts.test"
+      - "scripts.test:watch" 
+      - "scripts.test:ci"
+      - "scripts.lint"
+      - "scripts.lint:fix"
+      - "scripts.format"
+      - "scripts.build"
+      - "scripts.prepare"
+
+  # GitHub workflows - replace with project-specific substitutions
+  - path: ".github/workflows/ci.yml"
+    action: "replace"
+    
+  - path: ".github/workflows/semantic-release.yml"
+    action: "template"
+    substitutions:
+      - pattern: "mcp-template"
+        replacement: "{{project_name}}"
+      - pattern: "@mearman/mcp-template"
+        replacement: "@mearman/{{project_name}}"
+
+  # Husky and commit hooks
+  - path: ".husky/"
+    action: "replace"
+    
+  - path: "commitlint.config.js"
+    action: "replace"
+
+  # Template source files (for new projects)
+  - path: "src/tools/example.ts"
+    action: "copy_if_missing"
+    
+  - path: "src/tools/example.test.ts" 
+    action: "copy_if_missing"
+    
+  - path: "src/utils/validation.ts"
+    action: "merge_utils"
+    
+  - path: "src/utils/validation.test.ts"
+    action: "merge_utils"
+
+# Files to never sync (project-specific)
+ignore_files:
+  - "README.md"
+  - "CHANGELOG.md" 
+  - "LICENSE"
+  - "package-lock.json"
+  - "yarn.lock"
+  - "src/index.ts"
+  - "src/index.test.ts"
+  - "src/cli.ts"
+  - "src/cli.test.ts"
+  - "src/tools/*" # Except example files
+  - ".template-sync-config.yml"
+
+# Repository discovery settings
+repo_discovery:
+  organization: "Mearman"
+  topic: "mcp-server"
+  template_marker: ".template-marker"
+  
+# Sync behavior
+sync_behavior:
+  create_pull_request: true
+  auto_merge: false
+  pr_title: "chore: sync template updates (v{{template_version}})"
+  pr_body: |
+    ## Template Sync
+    
+    This PR synchronizes updates from the mcp-template repository.
+    
+    **Template Version:** {{template_version}}
+    **Files Updated:** {{updated_files}}
+    
+    ### Changes
+    {{change_summary}}
+    
+    ### Review Notes
+    - Configuration files have been updated
+    - Project-specific customizations are preserved
+    - Please review changes before merging
+    
+    ---
+    *This PR was automatically created by the template sync workflow*
+
+# Conflict resolution
+conflict_resolution:
+  strategy: "create_pr_with_conflicts"
+  notify_on_conflicts: true
+  conflict_markers: true
