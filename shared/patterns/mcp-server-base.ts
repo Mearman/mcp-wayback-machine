@@ -6,258 +6,293 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  type CallToolRequest,
-  type ListToolsRequest,
+	type CallToolRequest,
+	CallToolRequestSchema,
+	type ListToolsRequest,
+	ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
-export interface MCPTool {
-  name: string;
-  description: string;
-  inputSchema: object;
-  execute: (input: any) => Promise<any>;
+export interface MCPTool<TInput = unknown, TOutput = unknown> {
+	name: string;
+	description: string;
+	inputSchema: object;
+	execute: (input: TInput) => Promise<TOutput>;
 }
 
 export interface MCPServerConfig {
-  name: string;
-  version: string;
-  description?: string;
-  tools: MCPTool[];
-  enableCLI?: boolean;
-  cliCommands?: Record<string, (args: any) => Promise<void>>;
+	name: string;
+	version: string;
+	description?: string;
+	tools: MCPTool<unknown, unknown>[];
+	enableCLI?: boolean;
+	cliCommands?: Record<string, (args: string[]) => Promise<void>>;
 }
 
 /**
  * Base class for MCP servers with common functionality
  */
 export class MCPServerBase {
-  protected server: Server;
-  protected config: MCPServerConfig;
-  protected tools: Map<string, MCPTool> = new Map();
+	protected server: Server;
+	protected config: MCPServerConfig;
+	protected tools: Map<string, MCPTool<unknown, unknown>> = new Map();
 
-  constructor(config: MCPServerConfig) {
-    this.config = config;
-    
-    this.server = new Server(
-      {
-        name: config.name,
-        version: config.version,
-      },
-      {
-        capabilities: {
-          tools: {},
-        },
-      }
-    );
+	constructor(config: MCPServerConfig) {
+		this.config = config;
 
-    // Register tools
-    config.tools.forEach(tool => {
-      this.tools.set(tool.name, tool);
-    });
+		this.server = new Server(
+			{
+				name: config.name,
+				version: config.version,
+			},
+			{
+				capabilities: {
+					tools: {},
+				},
+			},
+		);
 
-    this.setupHandlers();
-  }
+		// Register tools
+		for (const tool of config.tools) {
+			this.tools.set(tool.name, tool);
+		}
 
-  /**
-   * Set up MCP request handlers
-   */
-  private setupHandlers(): void {
-    // List tools handler
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: Array.from(this.tools.values()).map(tool => ({
-        name: tool.name,
-        description: tool.description,
-        inputSchema: tool.inputSchema,
-      })),
-    }));
+		this.setupHandlers();
+	}
 
-    // Call tool handler
-    this.server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
-      const { name, arguments: args } = request.params;
-      
-      const tool = this.tools.get(name);
-      if (!tool) {
-        throw new Error(`Unknown tool: ${name}`);
-      }
+	/**
+	 * Set up MCP request handlers
+	 */
+	private setupHandlers(): void {
+		// List tools handler
+		this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
+			tools: Array.from(this.tools.values()).map((tool) => ({
+				name: tool.name,
+				description: tool.description,
+				inputSchema: tool.inputSchema,
+			})),
+		}));
 
-      try {
-        const result = await tool.execute(args);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Error executing ${name}: ${errorMessage}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    });
-  }
+		// Call tool handler
+		this.server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
+			const { name, arguments: args } = request.params;
 
-  /**
-   * Add a tool to the server
-   */
-  addTool(tool: MCPTool): void {
-    this.tools.set(tool.name, tool);
-  }
+			const tool = this.tools.get(name);
+			if (!tool) {
+				throw new Error(`Unknown tool: ${name}`);
+			}
 
-  /**
-   * Remove a tool from the server
-   */
-  removeTool(name: string): void {
-    this.tools.delete(name);
-  }
+			try {
+				const result = await tool.execute(args);
+				return {
+					content: [
+						{
+							type: 'text',
+							text:
+								typeof result === 'string'
+									? result
+									: JSON.stringify(result, null, 2),
+						},
+					],
+				};
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				return {
+					content: [
+						{
+							type: 'text',
+							text: `Error executing ${name}: ${errorMessage}`,
+						},
+					],
+					isError: true,
+				};
+			}
+		});
+	}
 
-  /**
-   * Start the MCP server
-   */
-  async start(): Promise<void> {
-    // Check if running as CLI
-    if (this.config.enableCLI && this.isRunningAsCLI()) {
-      await this.runCLI();
-      return;
-    }
+	/**
+	 * Add a tool to the server
+	 */
+	addTool<TInput = unknown, TOutput = unknown>(tool: MCPTool<TInput, TOutput>): void {
+		this.tools.set(tool.name, tool as MCPTool<unknown, unknown>);
+	}
 
-    // Start as MCP server
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-  }
+	/**
+	 * Remove a tool from the server
+	 */
+	removeTool(name: string): void {
+		this.tools.delete(name);
+	}
 
-  /**
-   * Check if running as CLI (not as MCP server)
-   */
-  private isRunningAsCLI(): boolean {
-    // Check for CLI-specific arguments or environment
-    return process.argv.includes('--cli') || 
-           process.argv.includes('cli') ||
-           process.env.MCP_CLI_MODE === 'true';
-  }
+	/**
+	 * Start the MCP server
+	 */
+	async start(): Promise<void> {
+		// Check if running as CLI
+		if (this.config.enableCLI && this.isRunningAsCLI()) {
+			await this.runCLI();
+			return;
+		}
 
-  /**
-   * Run in CLI mode
-   */
-  private async runCLI(): Promise<void> {
-    if (!this.config.cliCommands) {
-      console.error('CLI mode enabled but no CLI commands defined');
-      process.exit(1);
-    }
+		// Start as MCP server
+		const transport = new StdioServerTransport();
+		await this.server.connect(transport);
+	}
 
-    const command = process.argv[2];
-    const cliHandler = this.config.cliCommands[command];
+	/**
+	 * Check if running as CLI (not as MCP server)
+	 */
+	private isRunningAsCLI(): boolean {
+		// Check for CLI-specific arguments or environment
+		return (
+			process.argv.includes('--cli') ||
+			process.argv.includes('cli') ||
+			process.env.MCP_CLI_MODE === 'true'
+		);
+	}
 
-    if (!cliHandler) {
-      console.error(`Unknown command: ${command}`);
-      console.error('Available commands:', Object.keys(this.config.cliCommands).join(', '));
-      process.exit(1);
-    }
+	/**
+	 * Run in CLI mode
+	 */
+	private async runCLI(): Promise<void> {
+		if (!this.config.cliCommands) {
+			console.error('CLI mode enabled but no CLI commands defined');
+			process.exit(1);
+		}
 
-    try {
-      await cliHandler(process.argv.slice(3));
-    } catch (error) {
-      console.error('CLI Error:', error instanceof Error ? error.message : String(error));
-      process.exit(1);
-    }
-  }
+		const command = process.argv[2];
+		const cliHandler = this.config.cliCommands[command];
 
-  /**
-   * Create a tool with validation
-   */
-  static createTool(config: {
-    name: string;
-    description: string;
-    inputSchema: object;
-    execute: (input: any) => Promise<any>;
-    validate?: (input: any) => boolean | string;
-  }): MCPTool {
-    return {
-      name: config.name,
-      description: config.description,
-      inputSchema: config.inputSchema,
-      execute: async (input: any) => {
-        // Run validation if provided
-        if (config.validate) {
-          const validation = config.validate(input);
-          if (validation !== true) {
-            throw new Error(typeof validation === 'string' ? validation : 'Invalid input');
-          }
-        }
+		if (!cliHandler) {
+			console.error(`Unknown command: ${command}`);
+			console.error('Available commands:', Object.keys(this.config.cliCommands).join(', '));
+			process.exit(1);
+		}
 
-        return config.execute(input);
-      },
-    };
-  }
+		try {
+			await cliHandler(process.argv.slice(3));
+		} catch (error) {
+			console.error('CLI Error:', error instanceof Error ? error.message : String(error));
+			process.exit(1);
+		}
+	}
 
-  /**
-   * Helper to create error responses
-   */
-  protected createErrorResponse(message: string): { content: Array<{ type: string; text: string }>; isError: boolean } {
-    return {
-      content: [{ type: 'text', text: `Error: ${message}` }],
-      isError: true,
-    };
-  }
+	/**
+	 * Create a tool with validation
+	 */
+	static createTool<TInput = unknown, TOutput = unknown>(config: {
+		name: string;
+		description: string;
+		inputSchema: object;
+		execute: (input: TInput) => Promise<TOutput>;
+		validate?: (input: TInput) => boolean | string;
+	}): MCPTool<TInput, TOutput> {
+		return {
+			name: config.name,
+			description: config.description,
+			inputSchema: config.inputSchema,
+			execute: async (input: TInput) => {
+				// Run validation if provided
+				if (config.validate) {
+					const validation = config.validate(input);
+					if (validation !== true) {
+						throw new Error(
+							typeof validation === 'string' ? validation : 'Invalid input',
+						);
+					}
+				}
 
-  /**
-   * Helper to create success responses
-   */
-  protected createSuccessResponse(data: any): { content: Array<{ type: string; text: string }> } {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: typeof data === 'string' ? data : JSON.stringify(data, null, 2),
-        },
-      ],
-    };
-  }
+				return config.execute(input);
+			},
+		};
+	}
+
+	/**
+	 * Helper to create error responses
+	 */
+	protected createErrorResponse(message: string): {
+		content: Array<{ type: 'text'; text: string }>;
+		isError: boolean;
+	} {
+		return {
+			content: [{ type: 'text', text: `Error: ${message}` }],
+			isError: true,
+		};
+	}
+
+	/**
+	 * Helper to create success responses
+	 */
+	protected createSuccessResponse<T = unknown>(
+		data: T,
+	): { content: Array<{ type: 'text'; text: string }> } {
+		return {
+			content: [
+				{
+					type: 'text',
+					text: typeof data === 'string' ? data : JSON.stringify(data, null, 2),
+				},
+			],
+		};
+	}
 }
 
 /**
  * Utility function to create and start an MCP server
  */
 export async function createMCPServer(config: MCPServerConfig): Promise<void> {
-  const server = new MCPServerBase(config);
-  await server.start();
+	const server = new MCPServerBase(config);
+	await server.start();
 }
 
 /**
  * Decorator for tool methods (for class-based tool definitions)
  */
 export function tool(name: string, description: string, inputSchema: object) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    // Store tool metadata
-    if (!target.constructor._tools) {
-      target.constructor._tools = [];
-    }
-    
-    target.constructor._tools.push({
-      name,
-      description,
-      inputSchema,
-      execute: descriptor.value,
-    });
-  };
+	return <T extends Record<string, unknown>>(
+		target: T,
+		propertyKey: string,
+		descriptor: PropertyDescriptor,
+	) => {
+		// Store tool metadata
+		const ctor = target.constructor as Constructor;
+		if (!ctor._tools) {
+			ctor._tools = [];
+		}
+
+		ctor._tools.push({
+			name,
+			description,
+			inputSchema,
+			execute: descriptor.value,
+		});
+	};
 }
 
 /**
  * Helper to extract tools from a class decorated with @tool
  */
-export function extractToolsFromClass(instance: any): MCPTool[] {
-  const tools = instance.constructor._tools || [];
-  return tools.map((tool: any) => ({
-    ...tool,
-    execute: tool.execute.bind(instance),
-  }));
+interface ToolMetadata<TInput = unknown, TOutput = unknown> {
+	name: string;
+	description: string;
+	inputSchema: object;
+	execute: (this: unknown, input: TInput) => Promise<TOutput>;
+}
+
+interface ClassWithTools {
+	constructor: {
+		_tools?: ToolMetadata[];
+	};
+}
+
+type Constructor = {
+	new (...args: unknown[]): unknown;
+	_tools?: ToolMetadata[];
+};
+
+export function extractToolsFromClass<T extends ClassWithTools>(instance: T): MCPTool[] {
+	const tools = instance.constructor._tools || [];
+	return tools.map((tool: ToolMetadata) => ({
+		...tool,
+		execute: tool.execute.bind(instance),
+	}));
 }

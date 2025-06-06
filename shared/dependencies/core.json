@@ -1,39 +1,39 @@
 {
-  "description": "Core shared dependencies for all MCP servers",
-  "version": "2.0.0",
-  "dependencies": {
-    "node-fetch-cache": "^3.0.0",
-    "zod": "^3.22.0",
-    "zod-to-json-schema": "^3.21.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0",
-    "@vitest/coverage-v8": "^1.0.0",
-    "biome": "^1.4.0",
-    "husky": "^8.0.0",
-    "commitlint": "^18.0.0",
-    "@commitlint/config-conventional": "^18.0.0"
-  },
-  "peerDependencies": {
-    "@modelcontextprotocol/sdk": "^0.4.0"
-  },
-  "sync_rules": {
-    "dependencies": {
-      "node-fetch-cache": "always_sync",
-      "zod": "always_sync", 
-      "zod-to-json-schema": "always_sync"
-    },
-    "devDependencies": {
-      "@types/node": "sync_major_minor",
-      "typescript": "sync_major_minor",
-      "vitest": "always_sync",
-      "@vitest/coverage-v8": "always_sync",
-      "biome": "always_sync",
-      "husky": "always_sync",
-      "commitlint": "always_sync",
-      "@commitlint/config-conventional": "always_sync"
-    }
-  }
+	"description": "Core shared dependencies for all MCP servers",
+	"version": "2.0.0",
+	"dependencies": {
+		"node-fetch-cache": "^3.0.0",
+		"zod": "^3.22.0",
+		"zod-to-json-schema": "^3.21.0"
+	},
+	"devDependencies": {
+		"@types/node": "^20.0.0",
+		"typescript": "^5.0.0",
+		"vitest": "^1.0.0",
+		"@vitest/coverage-v8": "^1.0.0",
+		"biome": "^1.4.0",
+		"husky": "^8.0.0",
+		"commitlint": "^18.0.0",
+		"@commitlint/config-conventional": "^18.0.0"
+	},
+	"peerDependencies": {
+		"@modelcontextprotocol/sdk": "^0.4.0"
+	},
+	"sync_rules": {
+		"dependencies": {
+			"node-fetch-cache": "always_sync",
+			"zod": "always_sync",
+			"zod-to-json-schema": "always_sync"
+		},
+		"devDependencies": {
+			"@types/node": "sync_major_minor",
+			"typescript": "sync_major_minor",
+			"vitest": "always_sync",
+			"@vitest/coverage-v8": "always_sync",
+			"biome": "always_sync",
+			"husky": "always_sync",
+			"commitlint": "always_sync",
+			"@commitlint/config-conventional": "always_sync"
+		}
+	}
 }

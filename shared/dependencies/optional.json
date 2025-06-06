@@ -1,88 +1,80 @@
 {
-  "description": "Optional shared dependencies by category",
-  "version": "2.0.0",
-  "categories": {
-    "web_apis": {
-      "description": "For servers that interact with web APIs",
-      "dependencies": {
-        "cheerio": "^1.0.0",
-        "jsdom": "^23.0.0",
-        "xml2js": "^0.6.0"
-      },
-      "usage_examples": [
-        "Web scraping servers",
-        "HTML parsing servers", 
-        "API integration servers"
-      ]
-    },
-    "cli_support": {
-      "description": "For servers that support CLI mode",
-      "dependencies": {
-        "commander": "^11.0.0",
-        "chalk": "^5.0.0",
-        "ora": "^7.0.0",
-        "inquirer": "^9.0.0"
-      },
-      "usage_examples": [
-        "Dual MCP/CLI servers",
-        "Interactive setup tools",
-        "Command-line utilities"
-      ]
-    },
-    "data_processing": {
-      "description": "For servers that process data formats",
-      "dependencies": {
-        "csv-parser": "^3.0.0",
-        "xlsx": "^0.18.0",
-        "yaml": "^2.0.0"
-      },
-      "usage_examples": [
-        "Data import/export servers",
-        "File processing servers",
-        "Configuration servers"
-      ]
-    },
-    "database": {
-      "description": "For servers that interact with databases",
-      "dependencies": {
-        "sqlite3": "^5.0.0",
-        "better-sqlite3": "^9.0.0"
-      },
-      "usage_examples": [
-        "Local database servers",
-        "Caching servers",
-        "Persistence servers"
-      ]
-    },
-    "crypto": {
-      "description": "For servers that need cryptographic functions",
-      "dependencies": {
-        "crypto-js": "^4.0.0",
-        "bcrypt": "^5.0.0",
-        "jsonwebtoken": "^9.0.0"
-      },
-      "usage_examples": [
-        "Authentication servers",
-        "Security servers",
-        "Token management servers"
-      ]
-    },
-    "date_time": {
-      "description": "For servers that work with dates and times",
-      "dependencies": {
-        "date-fns": "^2.0.0",
-        "luxon": "^3.0.0"
-      },
-      "usage_examples": [
-        "Calendar servers",
-        "Scheduling servers",
-        "Time tracking servers"
-      ]
-    }
-  },
-  "sync_rules": {
-    "detection": "auto_detect_usage",
-    "strategy": "opt_in",
-    "update_policy": "notify_only"
-  }
+	"description": "Optional shared dependencies by category",
+	"version": "2.0.0",
+	"categories": {
+		"web_apis": {
+			"description": "For servers that interact with web APIs",
+			"dependencies": {
+				"cheerio": "^1.0.0",
+				"jsdom": "^23.0.0",
+				"xml2js": "^0.6.0"
+			},
+			"usage_examples": [
+				"Web scraping servers",
+				"HTML parsing servers",
+				"API integration servers"
+			]
+		},
+		"cli_support": {
+			"description": "For servers that support CLI mode",
+			"dependencies": {
+				"commander": "^11.0.0",
+				"chalk": "^5.0.0",
+				"ora": "^7.0.0",
+				"inquirer": "^9.0.0"
+			},
+			"usage_examples": [
+				"Dual MCP/CLI servers",
+				"Interactive setup tools",
+				"Command-line utilities"
+			]
+		},
+		"data_processing": {
+			"description": "For servers that process data formats",
+			"dependencies": {
+				"csv-parser": "^3.0.0",
+				"xlsx": "^0.18.0",
+				"yaml": "^2.0.0"
+			},
+			"usage_examples": [
+				"Data import/export servers",
+				"File processing servers",
+				"Configuration servers"
+			]
+		},
+		"database": {
+			"description": "For servers that interact with databases",
+			"dependencies": {
+				"sqlite3": "^5.0.0",
+				"better-sqlite3": "^9.0.0"
+			},
+			"usage_examples": ["Local database servers", "Caching servers", "Persistence servers"]
+		},
+		"crypto": {
+			"description": "For servers that need cryptographic functions",
+			"dependencies": {
+				"crypto-js": "^4.0.0",
+				"bcrypt": "^5.0.0",
+				"jsonwebtoken": "^9.0.0"
+			},
+			"usage_examples": [
+				"Authentication servers",
+				"Security servers",
+				"Token management servers"
+			]
+		},
+		"date_time": {
+			"description": "For servers that work with dates and times",
+			"dependencies": {
+				"date-fns": "^2.0.0",
+				"luxon": "^3.0.0"
+			},
+			"usage_examples": ["Calendar servers", "Scheduling servers", "Time tracking servers"]
+		}
+	},
+	"sync_rules": {
+		"detection": "auto_detect_usage",
+		"strategy": "opt_in",
+		"update_policy": "notify_only"
+	}
 }
