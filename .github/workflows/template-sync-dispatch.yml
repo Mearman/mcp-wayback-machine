@@ -1,0 +1,144 @@
+name: Template Sync Dispatch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tsconfig.json'
+      - 'biome.json'
+      - 'vitest.config.ts'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.yarnrc.yml'
+      - 'package.json'
+      - '.github/workflows/**'
+      - '.husky/**'
+      - 'commitlint.config.js'
+      - 'src/tools/example*'
+      - 'src/utils/validation*'
+      - '.github/template-sync-config.yml'
+  workflow_dispatch:
+    inputs:
+      target_repos:
+        description: 'Specific repos to sync (comma-separated, or "all" for discovery)'
+        required: false
+        default: 'all'
+      dry_run:
+        description: 'Dry run mode (only check what would be updated)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  discover-repos:
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.discover.outputs.repos }}
+    steps:
+      - name: Checkout template
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Discover target repositories
+        id: discover
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_REPOS: ${{ github.event.inputs.target_repos || 'all' }}
+        run: |
+          cat > discover-repos.js << 'EOF'
+          const { Octokit } = require('@octokit/rest');
+          
+          const octokit = new Octokit({
+            auth: process.env.GITHUB_TOKEN
+          });
+          
+          async function discoverRepos() {
+            const targetRepos = process.env.TARGET_REPOS;
+            
+            if (targetRepos !== 'all') {
+              // Specific repos provided
+              const repos = targetRepos.split(',').map(r => r.trim());
+              console.log(JSON.stringify(repos));
+              return;
+            }
+            
+            // Discover repos created from this template
+            const { data: repos } = await octokit.rest.repos.listForOrg({
+              org: 'Mearman',
+              type: 'public'
+            });
+            
+            const mcpRepos = [];
+            
+            for (const repo of repos) {
+              // Check if repo has template marker
+              try {
+                await octokit.rest.repos.getContent({
+                  owner: 'Mearman',
+                  repo: repo.name,
+                  path: '.template-marker'
+                });
+                
+                // Check if it's an MCP server repo
+                if (repo.name.startsWith('mcp-') && repo.name !== 'mcp-template') {
+                  mcpRepos.push(repo.name);
+                }
+              } catch (error) {
+                // No template marker found, skip
+              }
+            }
+            
+            console.log(JSON.stringify(mcpRepos));
+          }
+          
+          discoverRepos().catch(console.error);
+          EOF
+          
+          npm install @octokit/rest
+          repos=$(node discover-repos.js)
+          echo "repos=$repos" >> $GITHUB_OUTPUT
+          
+  trigger-sync:
+    needs: discover-repos
+    if: needs.discover-repos.outputs.repos != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ${{ fromJson(needs.discover-repos.outputs.repos) }}
+      max-parallel: 3
+    steps:
+      - name: Trigger template sync in ${{ matrix.repo }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.TEMPLATE_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/Mearman/${{ matrix.repo }}/dispatches" \
+            -d '{
+              "event_type": "template-sync",
+              "client_payload": {
+                "template_repo": "mcp-template",
+                "template_version": "${{ github.sha }}",
+                "dry_run": "${{ github.event.inputs.dry_run || false }}"
+              }
+            }'
+            
+      - name: Create sync tracking issue (if not dry run)
+        if: github.event.inputs.dry_run != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/Mearman/${{ matrix.repo }}/issues" \
+            -d '{
+              "title": "Template sync triggered",
+              "body": "Template sync has been triggered from mcp-template commit ${{ github.sha }}.\n\nCheck the Actions tab for sync progress.",
+              "labels": ["template-sync", "automated"]
+            }'

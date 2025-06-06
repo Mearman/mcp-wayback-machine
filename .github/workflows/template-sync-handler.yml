@@ -1,0 +1,278 @@
+name: Handle Template Sync
+
+# This workflow runs in derived repositories to handle incoming template syncs
+on:
+  repository_dispatch:
+    types: [template-sync]
+  workflow_dispatch:
+    inputs:
+      template_version:
+        description: 'Template version/commit to sync from'
+        required: false
+        default: 'main'
+      dry_run:
+        description: 'Dry run mode'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  sync-template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Add template remote
+        run: |
+          git remote add template https://github.com/Mearman/mcp-template.git || true
+          git fetch template
+          
+      - name: Get sync configuration
+        id: config
+        run: |
+          # Download sync config from template
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -o template-sync-config.yml \
+               "https://api.github.com/repos/Mearman/mcp-template/contents/.github/template-sync-config.yml"
+               
+          # Get project info
+          PROJECT_NAME=$(basename $(pwd))
+          echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          
+          # Check if this repo has template marker
+          if [ ! -f ".template-marker" ]; then
+            echo "No .template-marker found. Creating one..."
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                 -H "Accept: application/vnd.github.v3.raw" \
+                 -o .template-marker \
+                 "https://api.github.com/repos/Mearman/mcp-template/contents/.template-marker"
+          fi
+          
+      - name: Install sync dependencies
+        run: |
+          npm install js-yaml @octokit/rest semver
+          
+      - name: Execute template sync
+        id: sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ github.event.client_payload.dry_run || github.event.inputs.dry_run || 'false' }}
+          TEMPLATE_VERSION: ${{ github.event.client_payload.template_version || github.event.inputs.template_version || 'main' }}
+          PROJECT_NAME: ${{ steps.config.outputs.project_name }}
+        run: |
+          cat > sync-template.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const yaml = require('js-yaml');
+          const { execSync } = require('child_process');
+          
+          class TemplateSyncer {
+            constructor() {
+              this.config = yaml.load(fs.readFileSync('template-sync-config.yml', 'utf8'));
+              this.projectName = process.env.PROJECT_NAME;
+              this.dryRun = process.env.DRY_RUN === 'true';
+              this.updatedFiles = [];
+              this.conflicts = [];
+            }
+            
+            async sync() {
+              console.log(`🔄 Starting template sync for ${this.projectName}`);
+              console.log(`📋 Dry run: ${this.dryRun}`);
+              
+              // Checkout template files
+              execSync('git checkout template/main -- . || true', { stdio: 'inherit' });
+              
+              for (const fileConfig of this.config.sync_files) {
+                await this.syncFile(fileConfig);
+              }
+              
+              if (this.updatedFiles.length > 0) {
+                await this.createPullRequest();
+              } else {
+                console.log('✅ No updates needed');
+              }
+            }
+            
+            async syncFile(fileConfig) {
+              const { path: filePath, action } = fileConfig;
+              
+              if (!fs.existsSync(filePath)) {
+                console.log(`⏭️  Skipping ${filePath} (not found in template)`);
+                return;
+              }
+              
+              console.log(`🔄 Processing ${filePath} (action: ${action})`);
+              
+              switch (action) {
+                case 'replace':
+                  await this.replaceFile(filePath);
+                  break;
+                case 'merge':
+                  await this.mergeFile(filePath, fileConfig);
+                  break;
+                case 'template':
+                  await this.templateFile(filePath, fileConfig);
+                  break;
+                case 'copy_if_missing':
+                  await this.copyIfMissing(filePath);
+                  break;
+                case 'merge_utils':
+                  await this.mergeUtils(filePath);
+                  break;
+              }
+            }
+            
+            async replaceFile(filePath) {
+              // Simple file replacement
+              const templateContent = fs.readFileSync(filePath, 'utf8');
+              const currentPath = filePath.replace(/^template\//, '');
+              
+              if (fs.existsSync(currentPath)) {
+                const currentContent = fs.readFileSync(currentPath, 'utf8');
+                if (templateContent !== currentContent) {
+                  if (!this.dryRun) {
+                    fs.writeFileSync(currentPath, templateContent);
+                  }
+                  this.updatedFiles.push(currentPath);
+                  console.log(`✅ Updated ${currentPath}`);
+                }
+              }
+            }
+            
+            async mergeFile(filePath, config) {
+              const currentPath = filePath.replace(/^template\//, '');
+              
+              if (filePath.endsWith('.json')) {
+                await this.mergeJsonFile(filePath, currentPath, config);
+              } else {
+                await this.replaceFile(filePath);
+              }
+            }
+            
+            async mergeJsonFile(templatePath, currentPath, config) {
+              if (!fs.existsSync(currentPath)) {
+                await this.replaceFile(templatePath);
+                return;
+              }
+              
+              const templateData = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+              const currentData = JSON.parse(fs.readFileSync(currentPath, 'utf8'));
+              
+              // Preserve specified fields
+              if (config.preserve_fields) {
+                config.preserve_fields.forEach(field => {
+                  if (currentData[field] !== undefined) {
+                    this.setNestedValue(templateData, field, this.getNestedValue(currentData, field));
+                  }
+                });
+              }
+              
+              // Sync specified fields
+              if (config.sync_fields) {
+                config.sync_fields.forEach(field => {
+                  const templateValue = this.getNestedValue(templateData, field);
+                  if (templateValue !== undefined) {
+                    this.setNestedValue(currentData, field, templateValue);
+                  }
+                });
+              }
+              
+              const mergedData = { ...templateData, ...currentData };
+              const newContent = JSON.stringify(mergedData, null, 2) + '\n';
+              
+              if (!this.dryRun) {
+                fs.writeFileSync(currentPath, newContent);
+              }
+              this.updatedFiles.push(currentPath);
+              console.log(`✅ Merged ${currentPath}`);
+            }
+            
+            async templateFile(filePath, config) {
+              let content = fs.readFileSync(filePath, 'utf8');
+              
+              // Apply substitutions
+              if (config.substitutions) {
+                config.substitutions.forEach(sub => {
+                  const replacement = sub.replacement.replace('{{project_name}}', this.projectName);
+                  content = content.replace(new RegExp(sub.pattern, 'g'), replacement);
+                });
+              }
+              
+              const currentPath = filePath.replace(/^template\//, '');
+              if (!this.dryRun) {
+                fs.mkdirSync(path.dirname(currentPath), { recursive: true });
+                fs.writeFileSync(currentPath, content);
+              }
+              this.updatedFiles.push(currentPath);
+              console.log(`✅ Templated ${currentPath}`);
+            }
+            
+            getNestedValue(obj, path) {
+              return path.split('.').reduce((current, key) => current?.[key], obj);
+            }
+            
+            setNestedValue(obj, path, value) {
+              const keys = path.split('.');
+              const lastKey = keys.pop();
+              const target = keys.reduce((current, key) => {
+                if (!current[key]) current[key] = {};
+                return current[key];
+              }, obj);
+              target[lastKey] = value;
+            }
+            
+            async createPullRequest() {
+              if (this.dryRun) {
+                console.log(`🔍 Would update: ${this.updatedFiles.join(', ')}`);
+                return;
+              }
+              
+              // Configure git
+              execSync('git config user.name "Template Sync Bot"');
+              execSync('git config user.email "template-sync@mearman.co.uk"');
+              
+              // Create branch
+              const branchName = `template-sync-${Date.now()}`;
+              execSync(`git checkout -b ${branchName}`);
+              
+              // Add and commit changes
+              execSync('git add .');
+              execSync(`git commit -m "chore: sync template updates
+
+Updated files:
+${this.updatedFiles.map(f => `- ${f}`).join('\n')}
+
+Template version: ${process.env.TEMPLATE_VERSION}"`);
+              
+              // Push branch
+              execSync(`git push -u origin ${branchName}`);
+              
+              console.log(`✅ Created branch ${branchName} with template updates`);
+              console.log(`📝 Updated files: ${this.updatedFiles.join(', ')}`);
+            }
+          }
+          
+          const syncer = new TemplateSyncer();
+          syncer.sync().catch(console.error);
+          EOF
+          
+          node sync-template.js
+          
+      - name: Create summary
+        if: always()
+        run: |
+          echo "## Template Sync Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project:** ${{ steps.config.outputs.project_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Template Version:** ${{ env.TEMPLATE_VERSION }}" >> $GITHUB_STEP_SUMMARY  
+          echo "- **Dry Run:** ${{ env.DRY_RUN }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
