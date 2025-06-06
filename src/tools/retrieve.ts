@@ -44,7 +44,7 @@ export async function getArchivedUrl(input: GetArchivedUrlInput): Promise<{
 	try {
 		// Validate inputs
 		const validatedUrl = validateUrl(url);
-		const formattedTimestamp = formatTimestamp(timestamp);
+		const formattedTimestamp = timestamp ? formatTimestamp(timestamp) : null;
 
 		// Check rate limit
 		await waybackRateLimiter.waitForSlot();

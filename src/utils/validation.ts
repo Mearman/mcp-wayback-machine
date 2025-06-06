@@ -71,3 +71,30 @@ export function validateInput<T>(schema: z.ZodSchema<T>, input: unknown): T {
 		throw error;
 	}
 }
+
+/**
+ * Validate URL format and return sanitized URL
+ * @param url - URL string to validate
+ * @returns Validated URL string
+ * @throws {Error} If URL is invalid
+ */
+export function validateUrl(url: string): string {
+	return urlSchema.parse(url);
+}
+
+/**
+ * Format timestamp to human-readable string
+ * @param timestamp - 14-digit timestamp (YYYYMMDDHHmmss)
+ * @returns Formatted date string
+ */
+export function formatTimestamp(timestamp: string): string {
+	const validated = timestampSchema.parse(timestamp);
+	const year = validated.slice(0, 4);
+	const month = validated.slice(4, 6);
+	const day = validated.slice(6, 8);
+	const hour = validated.slice(8, 10);
+	const minute = validated.slice(10, 12);
+	const second = validated.slice(12, 14);
+	
+	return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+}
