@@ -17,13 +17,7 @@
 		"prepare": "husky",
 		"start": "node dist/index.js"
 	},
-	"keywords": [
-		"mcp",
-		"model-context-protocol",
-		"typescript",
-		"template",
-		"mcp-server"
-	],
+	"keywords": ["mcp", "model-context-protocol", "typescript", "template", "mcp-server"],
 	"author": "",
 	"license": "CC-BY-NC-SA-4.0",
 	"repository": {
