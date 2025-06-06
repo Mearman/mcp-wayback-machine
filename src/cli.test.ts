@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCLI } from './cli.js';
-import * as exampleModule from './tools/example.js';
-import * as fetchExampleModule from './tools/fetch-example.js';
+import * as retrieveModule from './tools/retrieve.js';
+import * as saveModule from './tools/save.js';
+import * as searchModule from './tools/search.js';
+import * as statusModule from './tools/status.js';
 
-vi.mock('./tools/example.js');
-vi.mock('./tools/fetch-example.js');
+vi.mock('./tools/save.js');
+vi.mock('./tools/retrieve.js');
+vi.mock('./tools/search.js');
+vi.mock('./tools/status.js');
 
 describe('CLI', () => {
 	let consoleLogSpy: ReturnType<typeof vi.spyOn>;
@@ -18,172 +22,83 @@ describe('CLI', () => {
 
 	it('should create CLI program', () => {
 		const program = createCLI();
-		expect(program.name()).toBe('mcp-template');
-		expect(program.description()).toContain('MCP template');
+		expect(program.name()).toBe('wayback');
+		expect(program.description()).toContain('Wayback Machine');
 	});
 
-	it('should handle example command', async () => {
-		vi.spyOn(exampleModule, 'exampleTool').mockResolvedValue({
-			content: [
+	it('should handle save command', async () => {
+		vi.spyOn(saveModule, 'saveUrl').mockResolvedValue({
+			success: true,
+			message: 'Saved',
+			archivedUrl: 'https://web.archive.org/web/123/https://example.com',
+			timestamp: '123',
+		});
+
+		const program = createCLI();
+		await program.parseAsync(['node', 'cli', 'save', 'https://example.com']);
+
+		expect(saveModule.saveUrl).toHaveBeenCalledWith({ url: 'https://example.com' });
+	});
+
+	it('should handle get command', async () => {
+		vi.spyOn(retrieveModule, 'getArchivedUrl').mockResolvedValue({
+			success: true,
+			message: 'Archive found',
+			available: true,
+			archivedUrl: 'https://web.archive.org/web/123/https://example.com',
+			timestamp: '123',
+		});
+
+		const program = createCLI();
+		await program.parseAsync(['node', 'cli', 'get', 'https://example.com']);
+
+		expect(retrieveModule.getArchivedUrl).toHaveBeenCalledWith({
+			url: 'https://example.com',
+			timestamp: undefined,
+		});
+	});
+
+	it('should handle search command', async () => {
+		vi.spyOn(searchModule, 'searchArchives').mockResolvedValue({
+			success: true,
+			message: 'Found archives',
+			results: [
 				{
-					type: 'text',
-					text: 'Echo: Hello World',
+					url: 'https://example.com',
+					archivedUrl: 'https://web.archive.org/web/123/https://example.com',
+					timestamp: '123',
+					date: '2023-01-01',
+					statusCode: '200',
+					mimeType: 'text/html',
 				},
 			],
+			totalResults: 1,
 		});
 
 		const program = createCLI();
-		await program.parseAsync(['node', 'cli', 'example', 'Hello World']);
+		await program.parseAsync(['node', 'cli', 'search', 'https://example.com']);
 
-		expect(exampleModule.exampleTool).toHaveBeenCalledWith({
-			message: 'Hello World',
-			uppercase: false,
+		expect(searchModule.searchArchives).toHaveBeenCalledWith({
+			url: 'https://example.com',
+			limit: 10,
 		});
 	});
 
-	it('should handle example command with uppercase option', async () => {
-		vi.spyOn(exampleModule, 'exampleTool').mockResolvedValue({
-			content: [
-				{
-					type: 'text',
-					text: 'Echo: HELLO WORLD',
-				},
-			],
+	it('should handle status command', async () => {
+		vi.spyOn(statusModule, 'checkArchiveStatus').mockResolvedValue({
+			success: true,
+			message: 'Status checked',
+			isArchived: true,
+			totalCaptures: 100,
+			firstCapture: '2020-01-01',
+			lastCapture: '2023-12-31',
 		});
 
 		const program = createCLI();
-		await program.parseAsync(['node', 'cli', 'example', 'Hello World', '--uppercase']);
+		await program.parseAsync(['node', 'cli', 'status', 'https://example.com']);
 
-		expect(exampleModule.exampleTool).toHaveBeenCalledWith({
-			message: 'Hello World',
-			uppercase: true,
+		expect(statusModule.checkArchiveStatus).toHaveBeenCalledWith({
+			url: 'https://example.com',
 		});
-	});
-
-	it('should handle errors gracefully', async () => {
-		const mockProcessExit = vi.spyOn(process, 'exit').mockImplementation(() => {
-			throw new Error('Process exit called');
-		});
-
-		vi.spyOn(exampleModule, 'exampleTool').mockRejectedValue(new Error('Test error'));
-
-		const program = createCLI();
-
-		try {
-			await program.parseAsync(['node', 'cli', 'example', 'Hello World']);
-		} catch (error) {
-			// Expected to throw due to process.exit mock
-		}
-
-		expect(mockProcessExit).toHaveBeenCalledWith(1);
-		mockProcessExit.mockRestore();
-	});
-
-	it('should handle fetch-example command', async () => {
-		vi.spyOn(fetchExampleModule, 'fetchExampleTool').mockResolvedValue({
-			content: [
-				{
-					type: 'text',
-					text: '# Fetch Example Results\n\nURL: https://httpbin.org/json\nStatus: 200 OK',
-				},
-			],
-			isError: false,
-		});
-
-		const program = createCLI();
-		await program.parseAsync(['node', 'cli', 'fetch-example', 'https://httpbin.org/json']);
-
-		expect(fetchExampleModule.fetchExampleTool).toHaveBeenCalledWith({
-			url: 'https://httpbin.org/json',
-		});
-	});
-
-	it('should handle fetch-example command with options', async () => {
-		vi.spyOn(fetchExampleModule, 'fetchExampleTool').mockResolvedValue({
-			content: [
-				{
-					type: 'text',
-					text: '# Fetch Example Results\n\nURL: https://httpbin.org/json\nBackend: cache-memory',
-				},
-			],
-			isError: false,
-		});
-
-		const program = createCLI();
-		await program.parseAsync([
-			'node',
-			'cli',
-			'fetch-example',
-			'https://httpbin.org/json',
-			'--backend',
-			'cache-memory',
-			'--no-cache',
-			'--user-agent',
-			'Test-Agent/1.0',
-		]);
-
-		expect(fetchExampleModule.fetchExampleTool).toHaveBeenCalledWith({
-			url: 'https://httpbin.org/json',
-			backend: 'cache-memory',
-			no_cache: true,
-			user_agent: 'Test-Agent/1.0',
-		});
-	});
-
-	it('should handle configure-fetch command', async () => {
-		vi.spyOn(fetchExampleModule, 'configureFetchTool').mockResolvedValue({
-			content: [
-				{
-					type: 'text',
-					text: '# Fetch Configuration Updated\n\nBackend: cache-disk\nCache TTL: 60000ms',
-				},
-			],
-			isError: false,
-		});
-
-		const program = createCLI();
-		await program.parseAsync([
-			'node',
-			'cli',
-			'configure-fetch',
-			'--backend',
-			'cache-disk',
-			'--cache-ttl',
-			'60000',
-			'--clear-cache',
-		]);
-
-		expect(fetchExampleModule.configureFetchTool).toHaveBeenCalledWith({
-			backend: 'cache-disk',
-			cache_ttl: 60000,
-			clear_cache: true,
-		});
-	});
-
-	it('should handle fetch-example errors', async () => {
-		const mockProcessExit = vi.spyOn(process, 'exit').mockImplementation(() => {
-			throw new Error('Process exit called');
-		});
-
-		vi.spyOn(fetchExampleModule, 'fetchExampleTool').mockResolvedValue({
-			content: [
-				{
-					type: 'text',
-					text: 'Network error occurred',
-				},
-			],
-			isError: true,
-		});
-
-		const program = createCLI();
-
-		try {
-			await program.parseAsync(['node', 'cli', 'fetch-example', 'https://invalid-url']);
-		} catch (error) {
-			// Expected to throw due to process.exit mock
-		}
-
-		expect(mockProcessExit).toHaveBeenCalledWith(1);
-		mockProcessExit.mockRestore();
 	});
 });

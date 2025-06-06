@@ -1,140 +1,133 @@
-/**
- * @fileoverview Command-line interface for MCP template operations
- * @module cli
- */
-
 import chalk from 'chalk';
 import { Command } from 'commander';
 import ora from 'ora';
-import { exampleTool } from './tools/example.js';
-import { configureFetchTool, fetchExampleTool } from './tools/fetch-example.js';
+import { getArchivedUrl } from './tools/retrieve.js';
+import { saveUrl } from './tools/save.js';
+import { searchArchives } from './tools/search.js';
+import { checkArchiveStatus } from './tools/status.js';
 
-/**
- * Create and configure the CLI command structure
- * @returns Configured Commander program instance
- * @description Sets up CLI commands for MCP template operations. This provides
- * command-line access to the same tools available via the MCP server interface.
- * @example
- * ```typescript
- * const program = createCLI();
- * await program.parseAsync(process.argv);
- * ```
- */
 export function createCLI() {
 	const program = new Command();
 
 	program
-		.name('mcp-template')
-		.description('CLI tool for MCP template operations')
+		.name('wayback')
+		.description('CLI tool for interacting with the Wayback Machine')
 		.version('1.0.0');
 
-	// Example tool command
+	// Save URL command
 	program
-		.command('example <message>')
-		.description('Run the example tool that echoes back the input')
-		.option('-u, --uppercase', 'Convert the message to uppercase')
-		.action(async (message: string, options: { uppercase?: boolean }) => {
-			const spinner = ora('Running example tool...').start();
+		.command('save <url>')
+		.description('Save a URL to the Wayback Machine')
+		.action(async (url: string) => {
+			const spinner = ora('Saving URL to Wayback Machine...').start();
 			try {
-				const result = await exampleTool({
-					message,
-					uppercase: options.uppercase || false,
-				});
-
-				spinner.succeed(chalk.green('Example tool completed!'));
-				console.log(chalk.blue('Result:'), result.content[0].text);
+				const result = await saveUrl({ url });
+				if (result.success) {
+					spinner.succeed(chalk.green('URL saved successfully!'));
+					console.log(chalk.blue('Archive URL:'), result.archivedUrl);
+					if (result.timestamp) {
+						console.log(chalk.blue('Timestamp:'), result.timestamp);
+					}
+					if (result.jobId) {
+						console.log(chalk.blue('Job ID:'), result.jobId);
+					}
+				} else {
+					spinner.fail(chalk.red(result.message));
+				}
 			} catch (error) {
-				spinner.fail(chalk.red('Error running example tool'));
+				spinner.fail(chalk.red('Error saving URL'));
 				console.error(error);
-				process.exit(1);
 			}
 		});
 
-	// Fetch example tool command
+	// Get archived URL command
 	program
-		.command('fetch-example <url>')
-		.description('Demonstrate configurable fetch patterns with different backends and caching')
-		.option(
-			'-b, --backend <backend>',
-			'Fetch backend to use (built-in, cache-memory, cache-disk)',
-		)
-		.option('--no-cache', 'Bypass cache for this request')
-		.option('-u, --user-agent <agent>', 'Custom User-Agent header for this request')
-		.action(
-			async (
-				url: string,
-				options: { backend?: string; cache?: boolean; userAgent?: string },
-			) => {
-				const spinner = ora('Fetching data...').start();
-				try {
-					// biome-ignore lint/suspicious/noExplicitAny: Building args dynamically
-					const args: any = { url };
-					if (options.backend) args.backend = options.backend;
-					if (options.cache === false) args.no_cache = true;
-					if (options.userAgent) args.user_agent = options.userAgent;
-
-					const result = await fetchExampleTool(args);
-
-					if (result.isError) {
-						spinner.fail(chalk.red('Error fetching data'));
-						console.error(chalk.red(result.content[0].text));
-						process.exit(1);
-					} else {
-						spinner.succeed(chalk.green('Fetch completed!'));
-						console.log(result.content[0].text);
-					}
-				} catch (error) {
-					spinner.fail(chalk.red('Error fetching data'));
-					console.error(error);
-					process.exit(1);
+		.command('get <url>')
+		.description('Get the archived version of a URL')
+		.option('-t, --timestamp <timestamp>', 'Specific timestamp (YYYYMMDDHHMMSS) or "latest"')
+		.action(async (url: string, options: { timestamp?: string }) => {
+			const spinner = ora('Retrieving archived URL...').start();
+			try {
+				const result = await getArchivedUrl({ url, timestamp: options.timestamp });
+				if (result.success && result.available) {
+					spinner.succeed(chalk.green('Archive found!'));
+					console.log(chalk.blue('Archived URL:'), result.archivedUrl);
+					console.log(chalk.blue('Timestamp:'), result.timestamp);
+				} else {
+					spinner.fail(chalk.yellow(result.message || 'No archive found'));
 				}
-			},
-		);
+			} catch (error) {
+				spinner.fail(chalk.red('Error retrieving archive'));
+				console.error(error);
+			}
+		});
 
-	// Configure fetch tool command
+	// Search archives command
 	program
-		.command('configure-fetch')
-		.description('Configure the global fetch instance settings and caching behavior')
-		.option('-b, --backend <backend>', 'Default fetch backend to use')
-		.option('-t, --cache-ttl <ms>', 'Cache TTL in milliseconds', Number.parseInt)
-		.option('-d, --cache-dir <dir>', 'Directory for disk caching')
-		.option('-u, --user-agent <agent>', 'Default User-Agent header')
-		.option('--clear-cache', 'Clear all caches')
-		.action(
-			async (options: {
-				backend?: string;
-				cacheTtl?: number;
-				cacheDir?: string;
-				userAgent?: string;
-				clearCache?: boolean;
-			}) => {
-				const spinner = ora('Updating fetch configuration...').start();
-				try {
-					// biome-ignore lint/suspicious/noExplicitAny: Building args dynamically
-					const args: any = {};
-					if (options.backend) args.backend = options.backend;
-					if (options.cacheTtl) args.cache_ttl = options.cacheTtl;
-					if (options.cacheDir) args.cache_dir = options.cacheDir;
-					if (options.userAgent) args.user_agent = options.userAgent;
-					if (options.clearCache) args.clear_cache = true;
-
-					const result = await configureFetchTool(args);
-
-					if (result.isError) {
-						spinner.fail(chalk.red('Error updating configuration'));
-						console.error(chalk.red(result.content[0].text));
-						process.exit(1);
-					} else {
-						spinner.succeed(chalk.green('Configuration updated!'));
-						console.log(result.content[0].text);
+		.command('search <url>')
+		.description('Search for all archived versions of a URL')
+		.option('-f, --from <date>', 'Start date (YYYY-MM-DD)')
+		.option('-t, --to <date>', 'End date (YYYY-MM-DD)')
+		.option('-l, --limit <number>', 'Maximum number of results', '10')
+		.action(async (url: string, options: { from?: string; to?: string; limit: string }) => {
+			const spinner = ora('Searching archives...').start();
+			try {
+				const result = await searchArchives({
+					url,
+					from: options.from,
+					to: options.to,
+					limit: Number.parseInt(options.limit, 10),
+				});
+				if (result.success && result.results && result.results.length > 0) {
+					spinner.succeed(chalk.green(`Found ${result.totalResults} archives`));
+					console.log(`\n${chalk.bold('Archive snapshots:')}`);
+					for (const snapshot of result.results) {
+						console.log(chalk.gray('─'.repeat(60)));
+						console.log(chalk.blue('Date:'), snapshot.date);
+						console.log(chalk.blue('URL:'), snapshot.archivedUrl);
+						console.log(chalk.blue('Status:'), snapshot.statusCode);
+						console.log(chalk.blue('Type:'), snapshot.mimeType);
 					}
-				} catch (error) {
-					spinner.fail(chalk.red('Error updating configuration'));
-					console.error(error);
-					process.exit(1);
+				} else {
+					spinner.fail(chalk.yellow(result.message || 'No archives found'));
 				}
-			},
-		);
+			} catch (error) {
+				spinner.fail(chalk.red('Error searching archives'));
+				console.error(error);
+			}
+		});
+
+	// Check status command
+	program
+		.command('status <url>')
+		.description('Check the archive status of a URL')
+		.action(async (url: string) => {
+			const spinner = ora('Checking archive status...').start();
+			try {
+				const result = await checkArchiveStatus({ url });
+				if (result.success) {
+					if (result.isArchived) {
+						spinner.succeed(chalk.green('URL is archived!'));
+						console.log(chalk.blue('Total captures:'), result.totalCaptures);
+						console.log(chalk.blue('First capture:'), result.firstCapture);
+						console.log(chalk.blue('Last capture:'), result.lastCapture);
+						if (result.yearlyCaptures) {
+							console.log(`\n${chalk.bold('Yearly captures:')}`);
+							for (const [year, count] of Object.entries(result.yearlyCaptures)) {
+								console.log(chalk.blue(`${year}:`), count);
+							}
+						}
+					} else {
+						spinner.warn(chalk.yellow('URL has not been archived'));
+					}
+				} else {
+					spinner.fail(chalk.red(result.message || 'Error checking status'));
+				}
+			} catch (error) {
+				spinner.fail(chalk.red('Error checking status'));
+				console.error(error);
+			}
+		});
 
 	return program;
 }

@@ -1,125 +1,188 @@
 #!/usr/bin/env node
-/**
- * @fileoverview Entry point that supports both MCP server and CLI modes
- * @module index
- */
-
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { zodToJsonSchema } from 'zod-to-json-schema';
-import { createCLI } from './cli.js';
-import { ExampleToolSchema, exampleTool } from './tools/example.js';
 import {
-	ConfigureFetchSchema,
-	FetchExampleSchema,
-	configureFetchTool,
-	fetchExampleTool,
-} from './tools/fetch-example.js';
+	CallToolRequestSchema,
+	ErrorCode,
+	ListToolsRequestSchema,
+	McpError,
+} from '@modelcontextprotocol/sdk/types.js';
 
-/**
- * Determine if we're running in CLI mode
- * CLI mode is detected when command line arguments are provided beyond node and script name
- */
-export function isCliMode() {
-	return process.argv.length > 2;
-}
+import { GetArchivedUrlSchema, getArchivedUrl } from './tools/retrieve.js';
+// Import tools
+import { SaveUrlSchema, saveUrl } from './tools/save.js';
+import { SearchArchivesSchema, searchArchives } from './tools/search.js';
+import { CheckArchiveStatusSchema, checkArchiveStatus } from './tools/status.js';
 
-/**
- * Main entry point that handles both MCP and CLI modes
- */
-export async function main() {
-	if (isCliMode()) {
-		// CLI Mode: Run as command-line tool
+// Create server instance
+const server = new Server(
+	{
+		name: 'mcp-wayback-machine',
+		version: '0.1.0',
+	},
+	{
+		capabilities: {
+			tools: {},
+		},
+	},
+);
+
+// Handle tool listing
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+	return {
+		tools: [
+			{
+				name: 'save_url',
+				description: 'Save a URL to the Wayback Machine',
+				inputSchema: SaveUrlSchema,
+			},
+			{
+				name: 'get_archived_url',
+				description: 'Retrieve an archived version of a URL',
+				inputSchema: GetArchivedUrlSchema,
+			},
+			{
+				name: 'search_archives',
+				description: 'Search the Wayback Machine archives for a URL',
+				inputSchema: SearchArchivesSchema,
+			},
+			{
+				name: 'check_archive_status',
+				description: 'Check if a URL has been archived',
+				inputSchema: CheckArchiveStatusSchema,
+			},
+		],
+	};
+});
+
+// Handle tool execution
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+	const { name, arguments: args } = request.params;
+
+	try {
+		switch (name) {
+			case 'save_url': {
+				const input = SaveUrlSchema.parse(args);
+				const result = await saveUrl(input);
+
+				let text = result.message;
+				if (result.archivedUrl) {
+					text += `\n\nArchived URL: ${result.archivedUrl}`;
+				}
+				if (result.timestamp) {
+					text += `\nTimestamp: ${result.timestamp}`;
+				}
+				if (result.jobId) {
+					text += `\nJob ID: ${result.jobId}`;
+				}
+
+				return {
+					content: [{ type: 'text', text }],
+				};
+			}
+
+			case 'get_archived_url': {
+				const input = GetArchivedUrlSchema.parse(args);
+				const result = await getArchivedUrl(input);
+
+				let text = result.message;
+				if (result.archivedUrl) {
+					text += `\n\nArchived URL: ${result.archivedUrl}`;
+				}
+				if (result.timestamp) {
+					text += `\nTimestamp: ${result.timestamp}`;
+				}
+				if (result.available !== undefined) {
+					text += `\nAvailable: ${result.available ? 'Yes' : 'No'}`;
+				}
+
+				return {
+					content: [{ type: 'text', text }],
+				};
+			}
+
+			case 'search_archives': {
+				const input = SearchArchivesSchema.parse(args);
+				const result = await searchArchives(input);
+
+				let text = result.message;
+				if (result.results && result.results.length > 0) {
+					text += '\n\nResults:';
+					for (const archive of result.results) {
+						text += `\n\n- Date: ${archive.date}`;
+						text += `\n  URL: ${archive.archivedUrl}`;
+						text += `\n  Status: ${archive.statusCode}`;
+						text += `\n  Type: ${archive.mimeType}`;
+					}
+				}
+
+				return {
+					content: [{ type: 'text', text }],
+				};
+			}
+
+			case 'check_archive_status': {
+				const input = CheckArchiveStatusSchema.parse(args);
+				const result = await checkArchiveStatus(input);
+
+				let text = result.message;
+				if (result.isArchived) {
+					if (result.firstCapture) {
+						text += `\n\nFirst captured: ${result.firstCapture}`;
+					}
+					if (result.lastCapture) {
+						text += `\nLast captured: ${result.lastCapture}`;
+					}
+					if (result.totalCaptures !== undefined) {
+						text += `\nTotal captures: ${result.totalCaptures}`;
+					}
+					if (result.yearlyCaptures && Object.keys(result.yearlyCaptures).length > 0) {
+						text += '\n\nCaptures by year:';
+						for (const [year, count] of Object.entries(result.yearlyCaptures)) {
+							text += `\n  ${year}: ${count}`;
+						}
+					}
+				}
+
+				return {
+					content: [{ type: 'text', text }],
+				};
+			}
+
+			default:
+				throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+		}
+	} catch (error) {
+		if (error instanceof McpError) {
+			throw error;
+		}
+
+		throw new McpError(
+			ErrorCode.InternalError,
+			error instanceof Error ? error.message : 'Unknown error occurred',
+		);
+	}
+});
+
+// Start the server
+async function main() {
+	// Check if running as CLI (has TTY or has arguments beyond node and script)
+	const isCliMode = process.stdin.isTTY || process.argv.length > 2;
+
+	if (isCliMode && process.argv.length > 2) {
+		// Running as CLI tool
+		const { createCLI } = await import('./cli.js');
 		const program = createCLI();
 		await program.parseAsync(process.argv);
 	} else {
-		// MCP Mode: Run as MCP server
-		await startMcpServer();
+		// Running as MCP server
+		const transport = new StdioServerTransport();
+		await server.connect(transport);
+		console.error('MCP Wayback Machine server running on stdio');
 	}
 }
 
-/**
- * Start the MCP server with all configured tools and handlers
- */
-export async function startMcpServer() {
-	/**
-	 * Create the MCP server instance with configured capabilities
-	 */
-	const server = new Server(
-		{
-			name: 'mcp-template',
-			version: '0.1.0',
-		},
-		{
-			capabilities: {
-				tools: {},
-			},
-		},
-	);
-
-	/**
-	 * Register handler for listing available tools
-	 * @returns List of available tools with their schemas
-	 */
-	server.setRequestHandler(ListToolsRequestSchema, async () => {
-		return {
-			tools: [
-				{
-					name: 'example_tool',
-					description: 'An example tool that echoes back the input',
-					inputSchema: zodToJsonSchema(ExampleToolSchema),
-				},
-				{
-					name: 'fetch_example',
-					description:
-						'Demonstrate configurable fetch patterns with different backends and caching',
-					inputSchema: zodToJsonSchema(FetchExampleSchema),
-				},
-				{
-					name: 'configure_fetch',
-					description:
-						'Configure the global fetch instance settings and caching behavior',
-					inputSchema: zodToJsonSchema(ConfigureFetchSchema),
-				},
-			],
-		};
-	});
-
-	/**
-	 * Register handler for executing tool calls
-	 * @param request - The tool call request containing tool name and arguments
-	 * @returns Tool execution result
-	 */
-	server.setRequestHandler(CallToolRequestSchema, async (request) => {
-		const { name, arguments: args } = request.params;
-
-		switch (name) {
-			case 'example_tool':
-				return await exampleTool(args);
-			case 'fetch_example':
-				return await fetchExampleTool(args);
-			case 'configure_fetch':
-				return await configureFetchTool(args);
-			default:
-				throw new Error(`Unknown tool: ${name}`);
-		}
-	});
-
-	/**
-	 * Start the MCP server using stdio transport
-	 */
-	const transport = new StdioServerTransport();
-	await server.connect(transport);
-
-	/**
-	 * Handle graceful shutdown on SIGINT (Ctrl+C)
-	 */
-	process.on('SIGINT', async () => {
-		await server.close();
-		process.exit(0);
-	});
-}
-
-// Start the application
-main().catch(console.error);
+main().catch((error) => {
+	console.error('Fatal error:', error);
+	process.exit(1);
+});
