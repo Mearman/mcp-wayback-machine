@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run tests
+        run: yarn test
+
+      - name: Build
+        run: yarn build
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            ./dist
+            ./sbom.spdx.json
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@v1
+        with:
+          subject-path: './dist'
+          sbom-path: './sbom.spdx.json'
+
+      - name: Generate Release Notes
+        id: changelog
+        run: |
+          # Extract version changelog
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Extract changelog for this version
+          if [ -f "CHANGELOG.md" ]; then
+            CHANGELOG=$(awk -v ver="$VERSION" '
+              /^##? \[?v?[0-9]+\.[0-9]+\.[0-9]+/ {
+                if (p) exit;
+                if ($0 ~ ver) p=1;
+                next;
+              }
+              p && /^##? \[?v?[0-9]+\.[0-9]+\.[0-9]+/ {exit}
+              p {print}
+            ' CHANGELOG.md)
+            
+            echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+            echo "$CHANGELOG" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "CHANGELOG=No changelog found" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.changelog.outputs.VERSION }}
+          body: |
+            ## What's Changed
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            ## Attestations
+            This release includes build provenance attestation and SBOM (Software Bill of Materials).
+            
+            You can verify the attestation using:
+            ```bash
+            gh attestation verify <artifact> --owner ${{ github.repository_owner }}
+            ```
+          files: |
+            sbom.spdx.json
+          generate_release_notes: true
+
+      - name: Setup Node.js for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@${{ github.repository_owner }}'
+
+      - name: Publish to GitHub Packages
+        run: |
+          # Update package name for GitHub Packages
+          npm pkg set name="@${{ github.repository_owner }}/mcp-template"
+          npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

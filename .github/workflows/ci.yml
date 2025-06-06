@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version:
+          - 18
+          - 20
+          - 22
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint commit messages
+        if: github.event_name == 'pull_request'
+        run: |
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+
+      - name: Lint and auto-fix code
+        id: lint
+        run: |
+          # First try to apply fixes
+          yarn format || true
+          yarn lint:fix || true
+          
+          # Check if there are any changes
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Run lint check to see if issues remain
+          yarn lint
+
+      - name: Commit and push lint fixes
+        if: steps.lint.outputs.has_changes == 'true' && github.event_name == 'push' && matrix.node-version == '20'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style: apply automatic lint fixes [skip ci]"
+          git push
+
+      - name: Commit lint fixes to PR
+        if: steps.lint.outputs.has_changes == 'true' && github.event_name == 'pull_request' && matrix.node-version == '20'
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: github-actions[bot]
+          author_email: 41898282+github-actions[bot]@users.noreply.github.com
+          message: 'style: apply automatic lint fixes'
+          push: true
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests with coverage
+        run: yarn test:ci
+
+      - name: Upload coverage reports
+        if: matrix.node-version == '20'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Build
+        run: yarn build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-node-${{ matrix.node-version }}
+          path: dist/
+          retention-days: 7
