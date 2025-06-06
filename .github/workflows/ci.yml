@@ -38,7 +38,7 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Lint commit messages
         if: github.event_name == 'pull_request'
