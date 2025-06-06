@@ -44,7 +44,10 @@ export async function getArchivedUrl(input: GetArchivedUrlInput): Promise<{
 	try {
 		// Validate inputs
 		const validatedUrl = validateUrl(url);
-		const validatedTimestamp = timestamp ? validateInput(timestampSchema, timestamp) : null;
+		const validatedTimestamp =
+			timestamp && timestamp !== 'latest'
+				? validateInput(timestampSchema, timestamp)
+				: timestamp;
 
 		// Check rate limit
 		await waybackRateLimiter.waitForSlot();
@@ -77,13 +80,13 @@ export async function getArchivedUrl(input: GetArchivedUrlInput): Promise<{
 		}
 
 		// If no snapshot found, try direct construction
-		if (formattedTimestamp) {
-			const directUrl = `https://web.archive.org/web/${formattedTimestamp}/${validatedUrl}`;
+		if (validatedTimestamp && validatedTimestamp !== 'latest') {
+			const directUrl = `https://web.archive.org/web/${validatedTimestamp}/${validatedUrl}/`;
 			return {
 				success: true,
 				message: 'No confirmed archive found. You can try this URL directly:',
 				archivedUrl: directUrl,
-				timestamp: formattedTimestamp,
+				timestamp: validatedTimestamp,
 				available: false,
 			};
 		}
