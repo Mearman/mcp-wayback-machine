@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/Mearman/mcp-template/compare/v1.0.1...v1.0.2) (2025-06-06)
+
+
+### Bug Fixes
+
+* resolve linting errors and update version to 2.0.0 ([a51edfc](https://github.com/Mearman/mcp-template/commit/a51edfc55fe8f36077fd5de0b63b87bdf9a6ebe3))
+
 ## [1.0.1](https://github.com/Mearman/mcp-template/compare/v1.0.0...v1.0.1) (2025-06-06)
 
 

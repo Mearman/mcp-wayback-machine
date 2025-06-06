@@ -1,6 +1,6 @@
 {
 	"name": "mcp-template",
-	"version": "2.0.0",
+	"version": "1.0.2",
 	"description": "Template for building MCP (Model Context Protocol) servers with TypeScript",
 	"main": "dist/index.js",
 	"bin": "dist/index.js",
@@ -17,7 +17,13 @@
 		"prepare": "husky",
 		"start": "node dist/index.js"
 	},
-	"keywords": ["mcp", "model-context-protocol", "typescript", "template", "mcp-server"],
+	"keywords": [
+		"mcp",
+		"model-context-protocol",
+		"typescript",
+		"template",
+		"mcp-server"
+	],
 	"author": "",
 	"license": "CC-BY-NC-SA-4.0",
 	"repository": {
