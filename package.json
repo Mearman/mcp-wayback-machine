@@ -1,10 +1,13 @@
 {
-	"name": "mcp-template",
-	"version": "1.0.2",
-	"description": "Template for building MCP (Model Context Protocol) servers with TypeScript",
+	"name": "mcp-wayback-machine",
+	"version": "1.0.0",
+	"description": "MCP server and CLI tool for interacting with the Wayback Machine without API keys",
 	"main": "dist/index.js",
-	"bin": "dist/index.js",
 	"type": "module",
+	"bin": {
+		"mcp-wayback-machine": "dist/index.js",
+		"wayback": "dist/index.js"
+	},
 	"scripts": {
 		"build": "tsc",
 		"dev": "tsx watch src/index.ts",
@@ -15,14 +18,29 @@
 		"lint:fix": "biome check --write .",
 		"format": "biome format --write .",
 		"prepare": "husky",
+		"prepublishOnly": "npm test && npm run build",
 		"start": "node dist/index.js"
 	},
-	"keywords": ["mcp", "model-context-protocol", "typescript", "template", "mcp-server"],
-	"author": "",
+	"keywords": [
+		"mcp",
+		"wayback",
+		"wayback-machine",
+		"internet-archive",
+		"archival",
+		"web-archive",
+		"mcp-server",
+		"model-context-protocol"
+	],
+	"author": "Joseph Mearman",
 	"license": "CC-BY-NC-SA-4.0",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/Mearman/mcp-template.git"
+		"url": "git+https://github.com/Mearman/mcp-wayback-machine.git"
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/",
+		"provenance": true
 	},
 	"files": [
 		"dist/**/*.js",
@@ -37,19 +55,19 @@
 		"@modelcontextprotocol/sdk": "^1.12.1",
 		"chalk": "^5.4.1",
 		"commander": "^14.0.0",
-		"node-fetch-cache": "^5.0.2",
 		"ora": "^8.2.0",
-		"zod": "^3.25.51",
-		"zod-to-json-schema": "^3.24.1"
+		"zod": "^3.25.51"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@commitlint/cli": "^19.6.1",
 		"@commitlint/config-conventional": "^19.6.0",
 		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/commit-analyzer": "^13.0.1",
 		"@semantic-release/git": "^10.0.1",
 		"@semantic-release/github": "^11.0.3",
 		"@semantic-release/npm": "^12.0.1",
+		"@semantic-release/release-notes-generator": "^14.0.3",
 		"@types/node": "^22.13.2",
 		"@vitest/coverage-v8": "^2.1.8",
 		"husky": "^9.1.7",
