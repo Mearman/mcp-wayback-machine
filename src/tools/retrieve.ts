@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import { HttpError, fetchWithTimeout, parseJsonResponse } from '../utils/http.js';
 import { waybackRateLimiter } from '../utils/rate-limit.js';
-import { validateUrl, validateInput, timestampSchema } from '../utils/validation.js';
+import { timestampSchema, validateInput, validateUrl } from '../utils/validation.js';
 
 export const GetArchivedUrlSchema = z.object({
 	url: z.string().url().describe('The URL to retrieve from the Wayback Machine'),
