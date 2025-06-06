@@ -1,3 +1,43 @@
+# 1.0.0 (2025-06-06)
+
+
+* feat!: introduce template synchronization system with breaking changes ([22b9036](https://github.com/Mearman/mcp-wayback-machine/commit/22b9036b1f65b1d0d832c4796b3188c283d57273))
+
+
+### Bug Fixes
+
+* add missing dependencies for template fetch utilities ([dbf82c6](https://github.com/Mearman/mcp-wayback-machine/commit/dbf82c6b67a5a3b4ee759f8c6237b9d12e3d84ce))
+* add missing validation utility functions for wayback machine tools ([dfc3546](https://github.com/Mearman/mcp-wayback-machine/commit/dfc354619e3817af23ef774f7ed3cccaced403a1))
+* add yarn.lock and use immutable installs for reproducible builds ([c873248](https://github.com/Mearman/mcp-wayback-machine/commit/c8732481dc6b8519c0b0b6813099d4fbb3ffc274))
+* correct timestamp validation in retrieve tool and format validation utilities ([83ed630](https://github.com/Mearman/mcp-wayback-machine/commit/83ed63046e13d9463e9ccdd27a1f4aa5719fa7bb))
+* disable immutable installs to allow lockfile creation in CI ([d22435b](https://github.com/Mearman/mcp-wayback-machine/commit/d22435bb6960237aad7290cade33f0c31d639524))
+* remove frozen-lockfile from CI workflows for template repository ([f5b55bb](https://github.com/Mearman/mcp-wayback-machine/commit/f5b55bb14e26b3077be88fff1f0649c5a306d2d8))
+* resolve linting errors and update version to 2.0.0 ([a51edfc](https://github.com/Mearman/mcp-wayback-machine/commit/a51edfc55fe8f36077fd5de0b63b87bdf9a6ebe3))
+* resolve wayback machine test failures and validation issues ([05f371d](https://github.com/Mearman/mcp-wayback-machine/commit/05f371d6066dda7eb94b5298640983e56ed97f6f))
+
+
+### Features
+
+* add CLI support for dual MCP/CLI mode ([40010ef](https://github.com/Mearman/mcp-wayback-machine/commit/40010ef3ef41fb9bfd6b6c8ad9d706211b741c5d))
+* add configurable fetch utility with caching ([0c4fc33](https://github.com/Mearman/mcp-wayback-machine/commit/0c4fc332ac33d7b4b3448323c3c254a1dae5cfdf))
+* add example tool implementation ([64332dd](https://github.com/Mearman/mcp-wayback-machine/commit/64332dd63ee4c6a7bff1c956ed1c5d7d9b65f093))
+* add fetch example tool demonstrating caching ([d6c973f](https://github.com/Mearman/mcp-wayback-machine/commit/d6c973f29100b63ac4c4e96ea79543b00b6af3b3))
+* add HTTP client and rate limiting utilities ([33c421c](https://github.com/Mearman/mcp-wayback-machine/commit/33c421ce8adff974f30c554d3522ff6e561a4a4a))
+* add MCP server entry point with tool registration ([f1c418a](https://github.com/Mearman/mcp-wayback-machine/commit/f1c418ace9cae5c1d109f43c573c98d867406fdb))
+* add shared dependency management configuration ([d23449b](https://github.com/Mearman/mcp-wayback-machine/commit/d23449bc9807459b8507be9c6c555f7d5473da9c))
+* add shared fetch utility for template synchronization ([f89a1f9](https://github.com/Mearman/mcp-wayback-machine/commit/f89a1f969b30d337a4fa77db017a96d487956be3))
+* add shared MCP server base patterns ([ab4cde7](https://github.com/Mearman/mcp-wayback-machine/commit/ab4cde719f1c2f7d914cf7757103a86ff28ccac7))
+* add template marker and version tracking ([0505eb6](https://github.com/Mearman/mcp-wayback-machine/commit/0505eb654b2ef77f67f54610593620ec7593c674))
+* add template synchronization configuration ([483f144](https://github.com/Mearman/mcp-wayback-machine/commit/483f144ee9719ade3fb961738cd37ee495cb39ee))
+* add validation utilities for common patterns ([e920306](https://github.com/Mearman/mcp-wayback-machine/commit/e920306c8dc92ddd3aab44a7136fe7530955d6f2))
+* add Wayback Machine MCP server and CLI implementation ([9b972c0](https://github.com/Mearman/mcp-wayback-machine/commit/9b972c0d8b9d8d7efee2c8b0d87d1ad8aa652c73))
+* add Wayback Machine tools (save, retrieve, search, status) ([fd1d1d9](https://github.com/Mearman/mcp-wayback-machine/commit/fd1d1d9a65d9577871f992280ca290d1259b9930))
+
+
+### BREAKING CHANGES
+
+* This release introduces a new CI-driven template synchronization system that fundamentally changes how template updates are distributed. Repositories created from this template will now receive automatic updates through GitHub Actions workflows. This includes new required files (.template-marker, .template-version), a shared utilities architecture, and new configuration requirements. See BREAKING_CHANGES.md for migration details.
+
 # 1.0.0 (2025-06-05)
 
 
