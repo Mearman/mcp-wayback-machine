@@ -95,6 +95,6 @@ export function formatTimestamp(timestamp: string): string {
 	const hour = validated.slice(8, 10);
 	const minute = validated.slice(10, 12);
 	const second = validated.slice(12, 14);
-	
+
 	return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 }

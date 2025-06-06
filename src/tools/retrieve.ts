@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import { HttpError, fetchWithTimeout, parseJsonResponse } from '../utils/http.js';
 import { waybackRateLimiter } from '../utils/rate-limit.js';
-import { formatTimestamp, validateUrl } from '../utils/validation.js';
+import { validateUrl, validateInput, timestampSchema } from '../utils/validation.js';
 
 export const GetArchivedUrlSchema = z.object({
 	url: z.string().url().describe('The URL to retrieve from the Wayback Machine'),
@@ -44,7 +44,7 @@ export async function getArchivedUrl(input: GetArchivedUrlInput): Promise<{
 	try {
 		// Validate inputs
 		const validatedUrl = validateUrl(url);
-		const formattedTimestamp = timestamp ? formatTimestamp(timestamp) : null;
+		const validatedTimestamp = timestamp ? validateInput(timestampSchema, timestamp) : null;
 
 		// Check rate limit
 		await waybackRateLimiter.waitForSlot();
@@ -52,8 +52,8 @@ export async function getArchivedUrl(input: GetArchivedUrlInput): Promise<{
 		// Use the Wayback Availability API
 		const apiUrl = new URL('https://archive.org/wayback/available');
 		apiUrl.searchParams.set('url', validatedUrl);
-		if (formattedTimestamp) {
-			apiUrl.searchParams.set('timestamp', formattedTimestamp);
+		if (validatedTimestamp) {
+			apiUrl.searchParams.set('timestamp', validatedTimestamp);
 		}
 
 		waybackRateLimiter.recordRequest();
