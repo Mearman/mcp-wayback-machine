@@ -1,0 +1,8 @@
+# MCP Template Repository Marker
+# This file identifies repositories created from the mcp-template
+# DO NOT DELETE - Required for automatic template synchronization
+
+template_repo: mcp-template
+template_version: 2.0.0
+created_date: 2025-01-06
+sync_enabled: true
