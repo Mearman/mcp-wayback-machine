@@ -90,4 +90,4 @@ Thumbs.db
 
 # Claude memory files
 .claude/
-CLAUDE.mdyarn.lock
+CLAUDE.md
