@@ -7,6 +7,7 @@ import {
 	ListToolsRequestSchema,
 	McpError,
 } from '@modelcontextprotocol/sdk/types.js';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import { GetArchivedUrlSchema, getArchivedUrl } from './tools/retrieve.js';
 // Import tools
@@ -34,22 +35,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 			{
 				name: 'save_url',
 				description: 'Save a URL to the Wayback Machine',
-				inputSchema: SaveUrlSchema,
+				inputSchema: zodToJsonSchema(SaveUrlSchema),
 			},
 			{
 				name: 'get_archived_url',
 				description: 'Retrieve an archived version of a URL',
-				inputSchema: GetArchivedUrlSchema,
+				inputSchema: zodToJsonSchema(GetArchivedUrlSchema),
 			},
 			{
 				name: 'search_archives',
 				description: 'Search the Wayback Machine archives for a URL',
-				inputSchema: SearchArchivesSchema,
+				inputSchema: zodToJsonSchema(SearchArchivesSchema),
 			},
 			{
 				name: 'check_archive_status',
 				description: 'Check if a URL has been archived',
-				inputSchema: CheckArchiveStatusSchema,
+				inputSchema: zodToJsonSchema(CheckArchiveStatusSchema),
 			},
 		],
 	};
