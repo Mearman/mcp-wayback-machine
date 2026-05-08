@@ -1,71 +1,87 @@
 /**
- * Get Archived URL tool - Retrieves archived versions of URLs
+ * Get Archived URL tool — Retrieves archived versions of URLs
  */
 
-import { z } from 'zod';
-import { fetchWithTimeout, HttpError, parseJsonResponse } from '../utils/http.js';
-import { validateUrl, formatTimestamp } from '../utils/validation.js';
-import { waybackRateLimiter } from '../utils/rate-limit.js';
+import { z } from "zod";
+import { cachingFetcher } from "../utils/cache.js";
+import { HttpError } from "../utils/http.js";
+import { waybackRateLimiter } from "../utils/rate-limit.js";
+import {
+	timestampSchema,
+	validateInput,
+	validateUrl,
+} from "../utils/validation.js";
 
 export const GetArchivedUrlSchema = z.object({
-	url: z.string().url().describe('The URL to retrieve from the Wayback Machine'),
+	url: z.url().describe("The URL to retrieve from the Wayback Machine"),
 	timestamp: z
 		.string()
 		.optional()
-		.describe('Specific timestamp (YYYYMMDDhhmmss) or "latest" for most recent'),
+		.describe(
+			'Specific timestamp (YYYYMMDDhhmmss) or "latest" for most recent',
+		),
 });
 
 export type GetArchivedUrlInput = z.infer<typeof GetArchivedUrlSchema>;
 
-interface AvailabilityResponse {
-	url: string;
-	archived_snapshots: {
-		closest?: {
-			status: string;
-			available: boolean;
-			url: string;
-			timestamp: string;
-		};
-	};
-}
+const AvailabilityResponseSchema = z.object({
+	url: z.string(),
+	archived_snapshots: z.object({
+		closest: z
+			.object({
+				status: z.string(),
+				available: z.boolean(),
+				url: z.string(),
+				timestamp: z.string(),
+			})
+			.optional(),
+	}),
+});
 
-/**
- * Get an archived version of a URL
- */
-export async function getArchivedUrl(input: GetArchivedUrlInput): Promise<{
+interface RetrieveResult {
 	success: boolean;
 	message: string;
 	archivedUrl?: string;
 	timestamp?: string;
 	available?: boolean;
-}> {
+}
+
+const USER_AGENT = "mcp-wayback-machine/2.0.0";
+
+/**
+ * Get an archived version of a URL
+ */
+export async function getArchivedUrl(
+	input: GetArchivedUrlInput,
+): Promise<RetrieveResult> {
 	const { url, timestamp } = input;
 
 	try {
-		// Validate inputs
 		const validatedUrl = validateUrl(url);
-		const formattedTimestamp = formatTimestamp(timestamp);
+		const validatedTimestamp =
+			timestamp !== undefined && timestamp !== "latest"
+				? validateInput(timestampSchema, timestamp)
+				: timestamp;
 
-		// Check rate limit
 		await waybackRateLimiter.waitForSlot();
 
-		// Use the Wayback Availability API
-		const apiUrl = new URL('https://archive.org/wayback/available');
-		apiUrl.searchParams.set('url', validatedUrl);
-		if (formattedTimestamp) {
-			apiUrl.searchParams.set('timestamp', formattedTimestamp);
+		const apiUrl = new URL("https://archive.org/wayback/available");
+		apiUrl.searchParams.set("url", validatedUrl);
+		if (validatedTimestamp !== undefined) {
+			apiUrl.searchParams.set("timestamp", validatedTimestamp);
 		}
 
 		waybackRateLimiter.recordRequest();
-		const response = await fetchWithTimeout(apiUrl.toString(), {
+		const response = await cachingFetcher.fetch(apiUrl.toString(), {
 			headers: {
-				'User-Agent': 'mcp-wayback-machine/0.1.0',
+				"User-Agent": USER_AGENT,
 			},
 		});
 
-		const data = await parseJsonResponse<AvailabilityResponse>(response);
+		const text = await response.text();
+		const data = AvailabilityResponseSchema.parse(JSON.parse(text));
 
-		if (data.archived_snapshots?.closest?.available) {
+		if (data.archived_snapshots.closest?.available) {
 			const snapshot = data.archived_snapshots.closest;
 			return {
 				success: true,
@@ -77,13 +93,17 @@ export async function getArchivedUrl(input: GetArchivedUrlInput): Promise<{
 		}
 
 		// If no snapshot found, try direct construction
-		if (formattedTimestamp) {
-			const directUrl = `https://web.archive.org/web/${formattedTimestamp}/${validatedUrl}`;
+		if (
+			validatedTimestamp !== undefined &&
+			validatedTimestamp !== "latest"
+		) {
+			const directUrl = `https://web.archive.org/web/${validatedTimestamp}/${validatedUrl}/`;
 			return {
 				success: true,
-				message: `No confirmed archive found. You can try this URL directly:`,
+				message:
+					"No confirmed archive found. You can try this URL directly:",
 				archivedUrl: directUrl,
-				timestamp: formattedTimestamp,
+				timestamp: validatedTimestamp,
 				available: false,
 			};
 		}
@@ -103,7 +123,7 @@ export async function getArchivedUrl(input: GetArchivedUrlInput): Promise<{
 
 		return {
 			success: false,
-			message: `Failed to retrieve archived URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			message: `Failed to retrieve archived URL: ${error instanceof Error ? error.message : "Unknown error"}`,
 		};
 	}
 }

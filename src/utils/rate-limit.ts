@@ -31,9 +31,12 @@ export class RateLimiter {
 	async waitForSlot(): Promise<void> {
 		while (!this.canMakeRequest()) {
 			const oldestRequest = this.requests[0];
+			if (oldestRequest === undefined) break;
 			const waitTime = oldestRequest + this.windowMs - Date.now();
 			if (waitTime > 0) {
-				await new Promise((resolve) => setTimeout(resolve, waitTime + 100));
+				await new Promise((resolve) =>
+					setTimeout(resolve, waitTime + 100),
+				);
 			}
 			this.cleanup();
 		}

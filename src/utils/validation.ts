@@ -1,68 +1,65 @@
 /**
- * URL validation utilities
+ * Common validation schemas and utilities for input validation
  */
+
+import { z } from "zod";
 
 /**
- * Validate and normalize a URL
+ * Schema for validating URL strings
  */
-export function validateUrl(url: string): string {
+export const urlSchema = z.url("Invalid URL format");
+
+/**
+ * Schema for validating date strings in YYYY-MM-DD format
+ */
+export const dateSchema = z
+	.string()
+	.regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format");
+
+/**
+ * Schema for validating timestamp strings in YYYYMMDDHHmmss format
+ */
+export const timestampSchema = z
+	.string()
+	.regex(/^\d{14}$/, "Timestamp must be in YYYYMMDDHHmmss format");
+
+/**
+ * Validate and parse input with helpful error messages
+ */
+export function validateInput<T>(schema: z.ZodType<T>, input: unknown): T {
 	try {
-		const parsed = new URL(url);
-
-		// Only allow http and https protocols
-		if (!['http:', 'https:'].includes(parsed.protocol)) {
-			throw new Error('Only HTTP and HTTPS URLs are supported');
-		}
-
-		return parsed.href;
+		return schema.parse(input);
 	} catch (error) {
-		if (error instanceof Error) {
-			throw new Error(`Invalid URL: ${error.message}`);
+		if (error instanceof z.ZodError) {
+			const issues = error.issues.map(
+				(issue) => `${issue.path.join(".")}: ${issue.message}`,
+			);
+			throw new Error(`Validation failed:\n${issues.join("\n")}`, {
+				cause: error,
+			});
 		}
-		throw new Error('Invalid URL format');
+		throw error;
 	}
 }
 
 /**
- * Format a timestamp for Wayback Machine API
- * Accepts: YYYY, YYYYMM, YYYYMMDD, or YYYYMMDDhhmmss
+ * Validate URL format and return sanitised URL
  */
-export function formatTimestamp(timestamp?: string): string | undefined {
-	if (!timestamp || timestamp === 'latest') {
-		return undefined;
-	}
+export function validateUrl(url: string): string {
+	return urlSchema.parse(url);
+}
 
-	// Remove any non-digits
-	const cleaned = timestamp.replace(/\D/g, '');
+/**
+ * Format timestamp to human-readable string
+ */
+export function formatTimestamp(timestamp: string): string {
+	const validated = timestampSchema.parse(timestamp);
+	const year = validated.slice(0, 4);
+	const month = validated.slice(4, 6);
+	const day = validated.slice(6, 8);
+	const hour = validated.slice(8, 10);
+	const minute = validated.slice(10, 12);
+	const second = validated.slice(12, 14);
 
-	// Validate length (4-14 digits)
-	if (cleaned.length < 4 || cleaned.length > 14) {
-		throw new Error(
-			'Timestamp must be in format: YYYY, YYYYMM, YYYYMMDD, or YYYYMMDDhhmmss',
-		);
-	}
-
-	// Validate year
-	const year = parseInt(cleaned.substring(0, 4));
-	if (year < 1996 || year > new Date().getFullYear()) {
-		throw new Error('Year must be between 1996 and current year');
-	}
-
-	// Validate month if present
-	if (cleaned.length >= 6) {
-		const month = parseInt(cleaned.substring(4, 6));
-		if (month < 1 || month > 12) {
-			throw new Error('Month must be between 01 and 12');
-		}
-	}
-
-	// Validate day if present
-	if (cleaned.length >= 8) {
-		const day = parseInt(cleaned.substring(6, 8));
-		if (day < 1 || day > 31) {
-			throw new Error('Day must be between 01 and 31');
-		}
-	}
-
-	return cleaned;
+	return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 }

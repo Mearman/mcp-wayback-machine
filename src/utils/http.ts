@@ -16,7 +16,7 @@ export class HttpError extends Error {
 		public readonly response?: string,
 	) {
 		super(message);
-		this.name = 'HttpError';
+		this.name = "HttpError";
 	}
 }
 
@@ -30,7 +30,9 @@ export async function fetchWithTimeout(
 	const { timeout = 30000, ...fetchOptions } = options;
 
 	const controller = new AbortController();
-	const timeoutId = setTimeout(() => controller.abort(), timeout);
+	const timeoutId = setTimeout(() => {
+		controller.abort();
+	}, timeout);
 
 	try {
 		const response = await fetch(url, {
@@ -41,9 +43,9 @@ export async function fetchWithTimeout(
 		clearTimeout(timeoutId);
 
 		if (!response.ok) {
-			const text = await response.text().catch(() => '');
+			const text = await response.text().catch(() => "");
 			throw new HttpError(
-				`HTTP ${response.status}: ${response.statusText}`,
+				`HTTP ${String(response.status)}: ${response.statusText}`,
 				response.status,
 				text,
 			);
@@ -53,24 +55,10 @@ export async function fetchWithTimeout(
 	} catch (error) {
 		clearTimeout(timeoutId);
 
-		if (error instanceof Error) {
-			if (error.name === 'AbortError') {
-				throw new HttpError(`Request timeout after ${timeout}ms`);
-			}
-			throw error;
+		if (error instanceof Error && error.name === "AbortError") {
+			throw new HttpError(`Request timeout after ${String(timeout)}ms`);
 		}
 
-		throw new HttpError('Network error occurred');
-	}
-}
-
-/**
- * Parse JSON response with error handling
- */
-export async function parseJsonResponse<T>(response: Response): Promise<T> {
-	try {
-		return await response.json() as T;
-	} catch (error) {
-		throw new HttpError('Failed to parse JSON response');
+		throw error;
 	}
 }

@@ -1,89 +1,92 @@
 /**
- * Search Archives tool - Search the Wayback Machine for archived versions
+ * Search Archives tool — Search the Wayback Machine for archived versions
  */
 
-import { z } from 'zod';
-import { fetchWithTimeout, HttpError, parseJsonResponse } from '../utils/http.js';
-import { validateUrl } from '../utils/validation.js';
-import { waybackRateLimiter } from '../utils/rate-limit.js';
+import { z } from "zod";
+import { cachingFetcher } from "../utils/cache.js";
+import { HttpError } from "../utils/http.js";
+import { waybackRateLimiter } from "../utils/rate-limit.js";
+import { validateUrl } from "../utils/validation.js";
 
 export const SearchArchivesSchema = z.object({
-	url: z.string().url().describe('The URL pattern to search for'),
-	from: z.string().optional().describe('Start date (YYYY-MM-DD)'),
-	to: z.string().optional().describe('End date (YYYY-MM-DD)'),
-	limit: z.number().optional().default(10).describe('Maximum number of results'),
+	url: z.url().describe("The URL pattern to search for"),
+	from: z.string().optional().describe("Start date (YYYY-MM-DD)"),
+	to: z.string().optional().describe("End date (YYYY-MM-DD)"),
+	limit: z
+		.number()
+		.optional()
+		.default(10)
+		.describe("Maximum number of results"),
 });
 
 export type SearchArchivesInput = z.infer<typeof SearchArchivesSchema>;
 
-interface CDXResult {
-	urlkey: string;
+const CdxResponseSchema = z.array(z.array(z.string()));
+
+interface ArchiveResult {
+	url: string;
+	archivedUrl: string;
 	timestamp: string;
-	original: string;
-	mimetype: string;
-	statuscode: string;
-	digest: string;
-	length: string;
+	date: string;
+	statusCode: string;
+	mimeType: string;
 }
+
+interface SearchResult {
+	success: boolean;
+	message: string;
+	results?: ArchiveResult[];
+	totalResults?: number;
+}
+
+const USER_AGENT = "mcp-wayback-machine/2.0.0";
 
 /**
  * Search the Wayback Machine archives
  */
-export async function searchArchives(input: SearchArchivesInput): Promise<{
-	success: boolean;
-	message: string;
-	results?: Array<{
-		url: string;
-		archivedUrl: string;
-		timestamp: string;
-		date: string;
-		statusCode: string;
-		mimeType: string;
-	}>;
-	totalResults?: number;
-}> {
-	const { url, from, to, limit = 10 } = input;
+export async function searchArchives(
+	input: SearchArchivesInput,
+): Promise<SearchResult> {
+	const { url, from, to, limit } = input;
 
 	try {
-		// Validate inputs
 		const validatedUrl = validateUrl(url);
 
 		// Format dates if provided
-		const fromDate = from ? from.replace(/-/g, '') : undefined;
-		const toDate = to ? to.replace(/-/g, '') : undefined;
+		const fromDate = from?.replace(/-/g, "");
+		const toDate = to?.replace(/-/g, "");
 
 		// Validate date format
-		if (fromDate && !/^\d{8}$/.test(fromDate)) {
-			throw new Error('From date must be in YYYY-MM-DD format');
+		if (fromDate !== undefined && !/^\d{8}$/.test(fromDate)) {
+			throw new Error("From date must be in YYYY-MM-DD format");
 		}
-		if (toDate && !/^\d{8}$/.test(toDate)) {
-			throw new Error('To date must be in YYYY-MM-DD format');
+		if (toDate !== undefined && !/^\d{8}$/.test(toDate)) {
+			throw new Error("To date must be in YYYY-MM-DD format");
 		}
 
-		// Check rate limit
 		await waybackRateLimiter.waitForSlot();
 
-		// Use the CDX API for searching
-		const apiUrl = new URL('https://web.archive.org/cdx/search/cdx');
-		apiUrl.searchParams.set('url', validatedUrl);
-		apiUrl.searchParams.set('output', 'json');
-		apiUrl.searchParams.set('limit', limit.toString());
+		const apiUrl = new URL("https://web.archive.org/cdx/search/cdx");
+		apiUrl.searchParams.set("url", validatedUrl);
+		apiUrl.searchParams.set("output", "json");
+		apiUrl.searchParams.set("limit", String(limit));
 
-		if (fromDate) {
-			apiUrl.searchParams.set('from', fromDate);
+		if (fromDate !== undefined) {
+			apiUrl.searchParams.set("from", fromDate);
 		}
-		if (toDate) {
-			apiUrl.searchParams.set('to', toDate);
+		if (toDate !== undefined) {
+			apiUrl.searchParams.set("to", toDate);
 		}
 
 		waybackRateLimiter.recordRequest();
-		const response = await fetchWithTimeout(apiUrl.toString(), {
+		const response = await cachingFetcher.fetch(apiUrl.toString(), {
 			headers: {
-				'User-Agent': 'mcp-wayback-machine/0.1.0',
+				"User-Agent": USER_AGENT,
 			},
 		});
 
-		const data = await parseJsonResponse<string[][]>(response);
+		const text = await response.text();
+		const data = CdxResponseSchema.parse(JSON.parse(text));
 
 		// First row is headers
 		if (data.length <= 1) {
@@ -96,16 +99,19 @@ export async function searchArchives(input: SearchArchivesInput): Promise<{
 		}
 
 		// Skip header row and map results
-		const results = data.slice(1).map((row) => {
-			const [urlkey, timestamp, original, mimetype, statuscode] = row;
+		const results: ArchiveResult[] = data.slice(1).map((row) => {
+			const timestamp = row[1] ?? "";
+			const original = row[2] ?? "";
+			const mimetype = row[3] ?? "";
+			const statuscode = row[4] ?? "";
 
 			// Format timestamp as readable date
 			const year = timestamp.substring(0, 4);
 			const month = timestamp.substring(4, 6);
 			const day = timestamp.substring(6, 8);
-			const hour = timestamp.substring(8, 10) || '00';
-			const minute = timestamp.substring(10, 12) || '00';
-			const second = timestamp.substring(12, 14) || '00';
+			const hour = timestamp.substring(8, 10) || "00";
+			const minute = timestamp.substring(10, 12) || "00";
+			const second = timestamp.substring(12, 14) || "00";
 
 			const date = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 			const archivedUrl = `https://web.archive.org/web/${timestamp}/${original}`;
@@ -122,7 +128,7 @@ export async function searchArchives(input: SearchArchivesInput): Promise<{
 
 		return {
 			success: true,
-			message: `Found ${results.length} archived version(s) of ${validatedUrl}`,
+			message: `Found ${String(results.length)} archived version(s) of ${validatedUrl}`,
 			results,
 			totalResults: results.length,
 		};
@@ -144,7 +150,7 @@ export async function searchArchives(input: SearchArchivesInput): Promise<{
 
 		return {
 			success: false,
-			message: `Failed to search archives: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			message: `Failed to search archives: ${error instanceof Error ? error.message : "Unknown error"}`,
 		};
 	}
 }

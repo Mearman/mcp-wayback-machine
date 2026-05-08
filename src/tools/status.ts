@@ -1,29 +1,46 @@
 /**
- * Check Archive Status tool - Check if a URL has been archived
+ * Check Archive Status tool — Check if a URL has been archived
  */
 
-import { z } from 'zod';
-import { fetchWithTimeout, HttpError, parseJsonResponse } from '../utils/http.js';
-import { validateUrl } from '../utils/validation.js';
-import { waybackRateLimiter } from '../utils/rate-limit.js';
+import { z } from "zod";
+import { cachingFetcher } from "../utils/cache.js";
+import { HttpError } from "../utils/http.js";
+import { waybackRateLimiter } from "../utils/rate-limit.js";
+import { validateUrl } from "../utils/validation.js";
+
+const SparklineResponseSchema = z.object({
+	first_ts: z.string().optional(),
+	last_ts: z.string().optional(),
+	years: z.record(z.string(), z.array(z.number())).optional(),
+	captures: z.number().optional(),
+});
+
+const AvailabilitySnapshotSchema = z.object({
+	available: z.boolean(),
+	timestamp: z.string(),
+	url: z.string().optional(),
+});
+
+const AvailabilityResponseSchema = z.object({
+	archivedSnapshots: z
+		.object({
+			closest: AvailabilitySnapshotSchema.optional(),
+		})
+		.optional(),
+	archived_snapshots: z
+		.object({
+			closest: AvailabilitySnapshotSchema.optional(),
+		})
+		.optional(),
+});
 
 export const CheckArchiveStatusSchema = z.object({
-	url: z.string().url().describe('The URL to check'),
+	url: z.url().describe("The URL to check"),
 });
 
 export type CheckArchiveStatusInput = z.infer<typeof CheckArchiveStatusSchema>;
 
-interface SparklineResponse {
-	first_ts?: string;
-	last_ts?: string;
-	years?: Record<string, number[]>;
-	captures?: number;
-}
-
-/**
- * Check if a URL has been archived and get statistics
- */
-export async function checkArchiveStatus(input: CheckArchiveStatusInput): Promise<{
+interface StatusResult {
 	success: boolean;
 	message: string;
 	isArchived: boolean;
@@ -31,81 +48,101 @@ export async function checkArchiveStatus(input: CheckArchiveStatusInput): Promis
 	lastCapture?: string;
 	totalCaptures?: number;
 	yearlyCaptures?: Record<string, number>;
-}> {
+}
+
+const USER_AGENT = "mcp-wayback-machine/2.0.0";
+
+function formatTimestamp(ts: string): string {
+	if (ts.length >= 8) {
+		const year = ts.substring(0, 4);
+		const month = ts.substring(4, 6);
+		const day = ts.substring(6, 8);
+		return `${year}-${month}-${day}`;
+	}
+	return ts;
+}
+
+/**
+ * Check if a URL has been archived and get statistics
+ */
+export async function checkArchiveStatus(
+	input: CheckArchiveStatusInput,
+): Promise<StatusResult> {
 	const { url } = input;
 
 	try {
-		// Validate URL
 		const validatedUrl = validateUrl(url);
 
-		// Check rate limit
 		await waybackRateLimiter.waitForSlot();
 
 		// Use the Sparkline API for statistics
-		const apiUrl = new URL('https://web.archive.org/__wb/sparkline');
-		apiUrl.searchParams.set('url', validatedUrl);
-		apiUrl.searchParams.set('collection', 'web');
-		apiUrl.searchParams.set('output', 'json');
+		const apiUrl = new URL("https://web.archive.org/__wb/sparkline");
+		apiUrl.searchParams.set("url", validatedUrl);
+		apiUrl.searchParams.set("collection", "web");
+		apiUrl.searchParams.set("output", "json");
 
 		waybackRateLimiter.recordRequest();
-		const response = await fetchWithTimeout(apiUrl.toString(), {
+		const response = await cachingFetcher.fetch(apiUrl.toString(), {
 			headers: {
-				'User-Agent': 'mcp-wayback-machine/0.1.0',
+				"User-Agent": USER_AGENT,
 			},
 		});
 
-		const data = await parseJsonResponse<SparklineResponse>(response);
+		const text = await response.text();
+		const data = SparklineResponseSchema.parse(JSON.parse(text));
 
-		if (data.first_ts) {
+		if (data.first_ts !== undefined) {
 			// Calculate yearly totals
 			const yearlyCaptures: Record<string, number> = {};
-			if (data.years) {
+			if (data.years !== undefined) {
 				for (const [year, months] of Object.entries(data.years)) {
-					yearlyCaptures[year] = months.reduce((sum, count) => sum + count, 0);
+					yearlyCaptures[year] = months.reduce(
+						(sum, count) => sum + count,
+						0,
+					);
 				}
 			}
 
-			// Format timestamps
-			const formatDate = (ts: string) => {
-				if (ts.length >= 8) {
-					const year = ts.substring(0, 4);
-					const month = ts.substring(4, 6);
-					const day = ts.substring(6, 8);
-					return `${year}-${month}-${day}`;
-				}
-				return ts;
-			};
-
-			return {
+			const result: StatusResult = {
 				success: true,
-				message: `${validatedUrl} has been archived ${data.captures || 0} times`,
+				message: `${validatedUrl} has been archived ${String(data.captures ?? 0)} times`,
 				isArchived: true,
-				firstCapture: formatDate(data.first_ts),
-				lastCapture: data.last_ts ? formatDate(data.last_ts) : undefined,
-				totalCaptures: data.captures || 0,
+				firstCapture: formatTimestamp(data.first_ts),
+				totalCaptures: data.captures ?? 0,
 				yearlyCaptures,
 			};
+			if (data.last_ts !== undefined) {
+				result.lastCapture = formatTimestamp(data.last_ts);
+			}
+			return result;
 		}
 
-		// Also check using availability API as fallback
-		const availUrl = new URL('https://archive.org/wayback/available');
-		availUrl.searchParams.set('url', validatedUrl);
+		// Fallback to availability API
+		const availUrl = new URL("https://archive.org/wayback/available");
+		availUrl.searchParams.set("url", validatedUrl);
 
 		waybackRateLimiter.recordRequest();
-		const availResponse = await fetchWithTimeout(availUrl.toString(), {
+		const availResponse = await cachingFetcher.fetch(availUrl.toString(), {
 			headers: {
-				'User-Agent': 'mcp-wayback-machine/0.1.0',
+				"User-Agent": USER_AGENT,
 			},
 		});
 
-		const availData = await parseJsonResponse<any>(availResponse);
+		const availText = await availResponse.text();
+		const availData = AvailabilityResponseSchema.parse(
+			JSON.parse(availText),
+		);
 
-		if (availData.archived_snapshots?.closest?.available) {
+		const closest =
+			availData.archived_snapshots?.closest ??
+			availData.archivedSnapshots?.closest;
+
+		if (closest?.available) {
 			return {
 				success: true,
 				message: `${validatedUrl} has been archived`,
 				isArchived: true,
-				lastCapture: availData.archived_snapshots.closest.timestamp,
+				lastCapture: closest.timestamp,
 			};
 		}
 
@@ -134,7 +171,7 @@ export async function checkArchiveStatus(input: CheckArchiveStatusInput): Promis
 
 		return {
 			success: false,
-			message: `Failed to check archive status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			message: `Failed to check archive status: ${error instanceof Error ? error.message : "Unknown error"}`,
 			isArchived: false,
 		};
 	}

@@ -1,99 +1,104 @@
 /**
- * Save URL tool - Archives a URL to the Wayback Machine
+ * Save URL tool — Archives a URL to the Wayback Machine
  */
 
-import { z } from 'zod';
-import { fetchWithTimeout, HttpError } from '../utils/http.js';
-import { validateUrl } from '../utils/validation.js';
-import { waybackRateLimiter } from '../utils/rate-limit.js';
+import { z } from "zod";
+import { HttpError, fetchWithTimeout } from "../utils/http.js";
+import { waybackRateLimiter } from "../utils/rate-limit.js";
+import { validateUrl } from "../utils/validation.js";
 
 export const SaveUrlSchema = z.object({
-	url: z.string().url().describe('The URL to save to the Wayback Machine'),
+	url: z.url().describe("The URL to save to the Wayback Machine"),
 });
 
 export type SaveUrlInput = z.infer<typeof SaveUrlSchema>;
 
-interface SaveResponse {
-	url: string;
-	job_id: string;
-	timestamp?: string;
-}
+const SaveResponseSchema = z.object({
+	url: z.string(),
+	job_id: z.string(),
+	timestamp: z.string().optional(),
+});
 
-/**
- * Save a URL to the Wayback Machine
- */
-export async function saveUrl(input: SaveUrlInput): Promise<{
+interface SaveResult {
 	success: boolean;
 	message: string;
 	jobId?: string;
 	archivedUrl?: string;
 	timestamp?: string;
-}> {
+}
+
+const USER_AGENT = "mcp-wayback-machine/2.0.0";
+
+/**
+ * Save a URL to the Wayback Machine
+ */
+export async function saveUrl(input: SaveUrlInput): Promise<SaveResult> {
 	const { url } = input;
 
 	try {
-		// Validate URL
 		const validatedUrl = validateUrl(url);
 
-		// Check rate limit
 		await waybackRateLimiter.waitForSlot();
 
-		// Make the save request
 		const saveApiUrl = `https://web.archive.org/save/${encodeURIComponent(validatedUrl)}`;
 
 		waybackRateLimiter.recordRequest();
 		const response = await fetchWithTimeout(saveApiUrl, {
-			method: 'GET',
+			method: "GET",
 			headers: {
-				'User-Agent': 'mcp-wayback-machine/0.1.0',
+				"User-Agent": USER_AGENT,
 			},
-			timeout: 60000, // 60 seconds for save operations
+			timeout: 60000,
 		});
 
 		// The save endpoint returns HTML, but includes a Location header
 		// with the archived URL when successful
-		const location = response.headers.get('Location');
-		const contentLocation = response.headers.get('Content-Location');
-		const archivedUrl = location || contentLocation;
+		const location = response.headers.get("Location");
+		const contentLocation = response.headers.get("Content-Location");
+		const archivedPath = location ?? contentLocation;
 
-		if (archivedUrl && archivedUrl.includes('/web/')) {
-			// Extract timestamp from the archived URL
-			const match = archivedUrl.match(/\/web\/(\d{14})\//);
-			const timestamp = match ? match[1] : undefined;
-
-			return {
+		if (archivedPath?.includes("/web/")) {
+			const match = /\/web\/(\d{14})\//.exec(archivedPath);
+			const result: SaveResult = {
 				success: true,
 				message: `Successfully submitted ${validatedUrl} for archiving`,
-				archivedUrl: `https://web.archive.org${archivedUrl}`,
-				timestamp,
+				archivedUrl: `https://web.archive.org${archivedPath}`,
 			};
+			if (match?.[1] !== undefined) {
+				result.timestamp = match[1];
+			}
+			return result;
 		}
 
 		// Try the save API endpoint (alternative method)
-		const saveApiUrl2 = 'https://web.archive.org/save';
 		waybackRateLimiter.recordRequest();
-		const response2 = await fetchWithTimeout(saveApiUrl2, {
-			method: 'POST',
-			headers: {
-				'User-Agent': 'mcp-wayback-machine/0.1.0',
-				'Content-Type': 'application/x-www-form-urlencoded',
+		const response2 = await fetchWithTimeout(
+			"https://web.archive.org/save",
+			{
+				method: "POST",
+				headers: {
+					"User-Agent": USER_AGENT,
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				body: `url=${encodeURIComponent(validatedUrl)}`,
+				timeout: 60000,
 			},
-			body: `url=${encodeURIComponent(validatedUrl)}`,
-			timeout: 60000,
-		});
+		);
 
-		// Try to parse as JSON
 		try {
-			const data = await response2.json() as SaveResponse;
-			return {
+			const text = await response2.text();
+			const data = SaveResponseSchema.parse(JSON.parse(text));
+			const result: SaveResult = {
 				success: true,
 				message: `Successfully submitted ${validatedUrl} for archiving`,
 				jobId: data.job_id,
 				archivedUrl: data.url,
-				timestamp: data.timestamp,
 			};
+			if (data.timestamp !== undefined) {
+				result.timestamp = data.timestamp;
+			}
+			return result;
 		} catch {
-			// If not JSON, assume success if we got a 200
 			return {
 				success: true,
 				message: `Successfully submitted ${validatedUrl} for archiving. Check status in a few moments.`,
@@ -104,7 +109,7 @@ export async function saveUrl(input: SaveUrlInput): Promise<{
 			if (error.status === 429) {
 				return {
 					success: false,
-					message: 'Rate limit exceeded. Please try again later.',
+					message: "Rate limit exceeded. Please try again later.",
 				};
 			}
 			return {
@@ -115,7 +120,7 @@ export async function saveUrl(input: SaveUrlInput): Promise<{
 
 		return {
 			success: false,
-			message: `Failed to save URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
+			message: `Failed to save URL: ${error instanceof Error ? error.message : "Unknown error"}`,
 		};
 	}
 }
