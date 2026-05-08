@@ -102,6 +102,7 @@ jobs:
         id: detect-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           pnpm release 2>&1 | tee release-output.txt
           if grep -q "Published release" release-output.txt; then
