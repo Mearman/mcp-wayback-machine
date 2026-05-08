@@ -70,10 +70,12 @@ jobs:
       - run: pnpm build
 
   release:
-    name: Release
+    name: Release to npmjs
     runs-on: ubuntu-latest
     needs: validate
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      released: ${{ steps.detect-release.outputs.released }}
     permissions:
       contents: write
       id-token: write
@@ -97,6 +99,44 @@ jobs:
       - run: pnpm build
 
       - name: Release
+        id: detect-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm release
+        run: |
+          pnpm release 2>&1 | tee release-output.txt
+          if grep -q "Published release" release-output.txt; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish-github-registry:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .tool-versions
+          registry-url: https://npm.pkg.github.com
+
+      - run: corepack enable
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - name: Publish to GitHub Packages
+        run: |
+          npm pkg set name=@mearman/mcp-wayback-machine
+          pnpm publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
