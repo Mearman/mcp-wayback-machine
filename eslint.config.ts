@@ -111,8 +111,46 @@ const noPointlessReassignments: Rule.RuleModule = {
 export default defineConfig(
 	{ ignores: ["dist/", "node_modules/"] },
 
+	// Source files — type-checked via tsconfig.json (rootDir: src)
 	{
-		files: ["**/*.ts"],
+		files: ["src/**/*.ts"],
+		extends: [
+			eslint.configs.recommended,
+			...configs.strictTypeChecked,
+			...configs.stylisticTypeChecked,
+		],
+		languageOptions: {
+			parserOptions: {
+				projectService: true,
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+		plugins: {
+			custom: {
+				rules: {
+					"no-pointless-reassignments": noPointlessReassignments,
+				},
+			},
+			prettier: eslintPluginPrettier,
+		},
+		rules: {
+			"custom/no-pointless-reassignments": "error",
+			"prettier/prettier": "error",
+			"@typescript-eslint/consistent-type-assertions": [
+				"error",
+				{ assertionStyle: "never" },
+			],
+		},
+	},
+
+	// Config files — no tsconfig, use allowDefaultProject
+	{
+		files: [
+			"eslint.config.ts",
+			"commitlint.config.ts",
+			"release.config.ts",
+			"lint-staged.config.ts",
+		],
 		extends: [
 			eslint.configs.recommended,
 			...configs.strictTypeChecked,
@@ -126,14 +164,6 @@ export default defineConfig(
 						"commitlint.config.ts",
 						"release.config.ts",
 						"lint-staged.config.ts",
-						"tests/utils/http.unit.test.ts",
-						"tests/utils/rate-limit.unit.test.ts",
-						"tests/utils/validation.unit.test.ts",
-						"tests/utils/cache.unit.test.ts",
-						"tests/tools/save.unit.test.ts",
-						"tests/tools/retrieve.unit.test.ts",
-						"tests/tools/search.unit.test.ts",
-						"tests/tools/status.unit.test.ts",
 					],
 				},
 				tsconfigRootDir: import.meta.dirname,
@@ -157,17 +187,40 @@ export default defineConfig(
 		},
 	},
 
+	// Test files — type-checked via tsconfig.tests.json
+	{
+		files: ["tests/**/*.ts"],
+		extends: [
+			eslint.configs.recommended,
+			...configs.strictTypeChecked,
+			...configs.stylisticTypeChecked,
+		],
+		languageOptions: {
+			parserOptions: {
+				project: "tsconfig.tests.json",
+				tsconfigRootDir: import.meta.dirname,
+			},
+		},
+		plugins: {
+			custom: {
+				rules: {
+					"no-pointless-reassignments": noPointlessReassignments,
+				},
+			},
+			prettier: eslintPluginPrettier,
+		},
+		rules: {
+			"custom/no-pointless-reassignments": "error",
+			"prettier/prettier": "error",
+			"@typescript-eslint/no-floating-promises": "off",
+			"@typescript-eslint/consistent-type-assertions": "off",
+		},
+	},
+
 	{
 		files: ["src/**/*.ts", "tests/**/*.ts"],
 		linterOptions: {
 			noInlineConfig: true,
-		},
-	},
-	{
-		files: ["tests/**/*.ts"],
-		rules: {
-			"@typescript-eslint/no-floating-promises": "off",
-			"@typescript-eslint/consistent-type-assertions": "off",
 		},
 	},
 	eslintConfigPrettier,
