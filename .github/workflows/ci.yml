@@ -105,11 +105,13 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           pnpm release 2>&1 | tee release-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
           if grep -q "Published release" release-output.txt; then
             echo "released=true" >> "$GITHUB_OUTPUT"
           else
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
+          exit $EXIT_CODE
 
   publish-github-registry:
     name: Publish to GitHub Packages
