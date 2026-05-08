@@ -1,8 +1,1 @@
-# Format all non-gitignored files
-npx biome check --write .
-
-# Stage any formatting changes
-git add -u
-
-# Run tests
-npm test
+pnpm exec lint-staged

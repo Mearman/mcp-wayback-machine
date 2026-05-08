@@ -1,78 +1,91 @@
 {
-	"name": "mcp-wayback-machine",
-	"version": "2.0.0",
-	"description": "MCP server and CLI tool for interacting with the Wayback Machine without API keys",
-	"main": "dist/index.js",
-	"type": "module",
-	"bin": {
-		"mcp-wayback-machine": "dist/index.js",
-		"wayback": "dist/index.js"
-	},
-	"scripts": {
-		"build": "tsc",
-		"dev": "tsx watch src/index.ts",
-		"test": "vitest run --coverage",
-		"test:watch": "vitest --watch",
-		"test:ci": "vitest run --coverage --reporter=json --reporter=default",
-		"prepare": "npm run build",
-		"prepublishOnly": "npm test && npm run build",
-		"start": "node dist/index.js"
-	},
-	"keywords": [
-		"mcp",
-		"wayback",
-		"wayback-machine",
-		"internet-archive",
-		"archival",
-		"web-archive",
-		"mcp-server",
-		"model-context-protocol"
-	],
-	"author": "Joseph Mearman",
-	"license": "CC-BY-NC-SA-4.0",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/Mearman/mcp-wayback-machine.git"
-	},
-	"publishConfig": {
-		"access": "public",
-		"registry": "https://registry.npmjs.org/",
-		"provenance": true
-	},
-	"files": [
-		"dist/**/*.js",
-		"dist/**/*.d.ts",
-		"dist/**/*.map",
-		"!dist/**/*.test.*",
-		"LICENSE",
-		"README.md",
-		"CHANGELOG.md"
-	],
-	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.12.1",
-		"chalk": "^5.4.1",
-		"commander": "^14.0.0",
-		"ora": "^8.2.0",
-		"zod": "^3.25.51"
-	},
-	"devDependencies": {
-		"@commitlint/cli": "^19.6.1",
-		"@commitlint/config-conventional": "^19.6.0",
-		"@semantic-release/changelog": "^6.0.3",
-		"@semantic-release/commit-analyzer": "^13.0.1",
-		"@semantic-release/git": "^10.0.1",
-		"@semantic-release/github": "^11.0.3",
-		"@semantic-release/npm": "^12.0.1",
-		"@semantic-release/release-notes-generator": "^14.0.3",
-		"@types/node": "^22.13.2",
-		"@vitest/coverage-v8": "^2.1.8",
-		"semantic-release": "^24.2.5",
-		"tsx": "^4.19.2",
-		"typescript": "^5.7.3",
-		"vitest": "^2.1.8"
-	},
-	"engines": {
-		"node": ">=18"
-	},
-	"packageManager": "yarn@4.9.1"
+  "name": "mcp-wayback-machine",
+  "version": "2.0.0",
+  "description": "MCP server and CLI tool for interacting with the Wayback Machine without API keys",
+  "main": "./dist/index.js",
+  "type": "module",
+  "bin": {
+    "mcp-wayback-machine": "dist/index.js",
+    "wayback": "dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "turbo run _build",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "_typecheck": "tsc --noEmit",
+    "_lint": "eslint --cache",
+    "_lint:fix": "eslint --cache --fix",
+    "_test": "tsx --test 'tests/**/*.unit.test.ts' 'tests/**/*.integration.test.ts'",
+    "_test:coverage": "tsx --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 --test-coverage-include='src/**/*.ts' 'tests/**/*.unit.test.ts' 'tests/**/*.integration.test.ts'",
+    "_build": "tsc && chmod +x dist/index.js",
+    "typecheck": "turbo run _typecheck",
+    "lint": "turbo run _lint",
+    "lint:fix": "turbo run _lint:fix",
+    "test": "turbo run _test",
+    "test:coverage": "turbo run _test:coverage",
+    "validate": "turbo run _validate",
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run",
+    "prepare": "husky",
+    "prepublishOnly": "pnpm validate"
+  },
+  "keywords": [
+    "mcp",
+    "wayback",
+    "wayback-machine",
+    "internet-archive",
+    "archival",
+    "web-archive",
+    "mcp-server",
+    "model-context-protocol"
+  ],
+  "author": "Joseph Mearman",
+  "license": "CC-BY-NC-SA-4.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mearman/mcp-wayback-machine.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "commander": "14.0.3",
+    "zod": "4.4.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "20.5.3",
+    "@commitlint/config-conventional": "20.5.3",
+    "@eslint/js": "10.0.1",
+    "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/git": "10.0.1",
+    "@semantic-release/github": "12.0.6",
+    "@types/node": "25.6.0",
+    "conventional-changelog-conventionalcommits": "9.3.1",
+    "eslint": "10.2.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-prettier": "5.5.5",
+    "husky": "9.1.7",
+    "lint-staged": "16.4.0",
+    "prettier": "3.8.3",
+    "semantic-release": "25.0.3",
+    "tsx": "4.21.0",
+    "turbo": "2.9.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.58.2"
+  },
+  "packageManager": "pnpm@10.33.1"
 }

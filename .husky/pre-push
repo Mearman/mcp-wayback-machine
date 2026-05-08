@@ -1,0 +1,1 @@
+pnpm exec turbo run _typecheck _test:coverage
