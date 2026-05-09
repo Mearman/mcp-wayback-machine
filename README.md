@@ -4,7 +4,7 @@
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Mearman/mcp-wayback-machine/ci.yml?branch=main)](https://github.com/Mearman/mcp-wayback-machine/actions)
 
-An MCP (Model Context Protocol) server and CLI tool for interacting with the Internet Archive's Wayback Machine. Supports full CDX search, snapshot content retrieval, screenshot listing, snapshot comparison, and optional authentication for higher rate limits.
+An MCP (Model Context Protocol) server and CLI tool for interacting with the Internet Archive's Wayback Machine. Supports full CDX search, snapshot content retrieval, screenshot listing, snapshot comparison, and optional authentication for higher SPN2 rate limits.
 
 ## Installation
 
@@ -209,43 +209,50 @@ Compare two archived snapshots of a URL. Fetches the raw content of both and pro
 
 Clear all cached API responses. Use when fresh data is needed or after saving a new URL.
 
-## CLI Usage
-
-```bash
-# Archive a URL
-wayback save https://example.com
-
-# Retrieve archived content
-wayback get https://example.com
-wayback get https://example.com --timestamp 20231225120000
-
-# Search archived versions
-wayback search https://example.com --from 2023-01-01 --to 2023-12-31
-wayback search https://example.com --limit 20
-
-# Check archival statistics
-wayback status https://example.com
-
-# List screenshots
-wayback screenshots https://example.com
-
-# Compare two snapshots
-wayback compare https://example.com
-wayback compare https://example.com --timestamp-a 20230101000000 --timestamp-b 20240101000000
-```
-
 ## Credentials
 
-The server works anonymously by default. For higher SPN2 rate limits, set Internet Archive S3 credentials via environment variables:
+The server works anonymously by default. Set Internet Archive S3 credentials for higher rate limits on save operations:
 
 ```bash
 export WAYBACK_ACCESS_KEY="your-access-key"
 export WAYBACK_SECRET_KEY="your-secret-key"
 ```
 
-Credentials are only sent on `/save` endpoints. All read operations (retrieve, search, status, screenshots, compare) work without authentication.
+To obtain credentials, log in to [archive.org](https://archive.org) and visit your [S3 API keys](https://archive.org/account/s3.php) page.
 
-To obtain credentials, log in to [archive.org](https://archive.org) and visit your account settings to generate S3 access keys.
+## CLI Usage
+
+```bash
+wayback save https://example.com
+```
+
+```bash
+wayback get https://example.com
+```
+
+```bash
+wayback get https://example.com --timestamp 20231225120000
+```
+
+```bash
+wayback search https://example.com --from 2023-01-01 --to 2023-12-31 --limit 20
+```
+
+```bash
+wayback status https://example.com
+```
+
+```bash
+wayback screenshots https://example.com
+```
+
+```bash
+wayback compare https://example.com
+```
+
+```bash
+wayback compare https://example.com --timestamp-a 20230101000000 --timestamp-b 20240101000000
+```
 
 ## Technical Details
 
@@ -270,9 +277,10 @@ pnpm validate     # typecheck + lint + test + build
 
 ## Resources
 
-- [Wayback Machine APIs](https://archive.org/developers/wayback-api.html)
+- [Internet Archive Developer Portal](https://archive.org/developers/)
 - [CDX Server Documentation](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server)
 - [Save Page Now 2 (SPN2) API](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)
+- [Bots, LLMs, and Automated Access](https://archive.org/developers/bots.html)
 
 ## License
 
