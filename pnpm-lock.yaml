@@ -10,13 +10,13 @@ importers:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: 1.29.0
-        version: 1.29.0(zod@4.4.1)
+        version: 1.29.0(zod@4.4.3)
       commander:
         specifier: 14.0.3
         version: 14.0.3
       zod:
-        specifier: 4.4.1
-        version: 4.4.1
+        specifier: 4.4.3
+        version: 4.4.3
     devDependencies:
       '@commitlint/cli':
         specifier: 20.5.3
@@ -30,9 +30,6 @@ importers:
       '@semantic-release/changelog':
         specifier: 6.0.3
         version: 6.0.3(semantic-release@25.0.3(typescript@6.0.3))
-      '@semantic-release/exec':
-        specifier: 7.1.0
-        version: 7.1.0(semantic-release@25.0.3(typescript@6.0.3))
       '@semantic-release/git':
         specifier: 10.0.1
         version: 10.0.1(semantic-release@25.0.3(typescript@6.0.3))
@@ -56,7 +53,7 @@ importers:
         version: 5.5.5(eslint-config-prettier@10.1.8(eslint@10.2.1(jiti@2.6.1)))(eslint@10.2.1(jiti@2.6.1))(prettier@3.8.3)
       eslint-plugin-zod:
         specifier: 3.11.0
-        version: 3.11.0(eslint@10.2.1(jiti@2.6.1))(typescript@6.0.3)(zod@4.4.1)
+        version: 3.11.0(eslint@10.2.1(jiti@2.6.1))(typescript@6.0.3)(zod@4.4.3)
       husky:
         specifier: 9.1.7
         version: 9.1.7
@@ -347,12 +344,6 @@ packages:
   '@semantic-release/error@4.0.0':
     resolution: {integrity: sha512-mgdxrHTLOjOddRVYIYDo0fR3/v61GNN1YGkfbrjuIKg/uMgCd+Qzo3UAXJ+woLQQpos4pl5Esuw5A7AoNlzjUQ==}
     engines: {node: '>=18'}
-
-  '@semantic-release/exec@7.1.0':
-    resolution: {integrity: sha512-4ycZ2atgEUutspPZ2hxO6z8JoQt4+y/kkHvfZ1cZxgl9WKJId1xPj+UadwInj+gMn2Gsv+fLnbrZ4s+6tK2TFQ==}
-    engines: {node: '>=20.8.1'}
-    peerDependencies:
-      semantic-release: '>=24.1.0'
 
   '@semantic-release/git@10.0.1':
     resolution: {integrity: sha512-eWrx5KguUcU2wUPaO6sfvZI0wPafUKAMNC18aXY4EnNcrZL86dEmpNVnC9uMpGZkmZJ9EfCVJBQx4pV4EMGT1w==}
@@ -2293,8 +2284,8 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
-  zod@4.4.1:
-    resolution: {integrity: sha512-a6ENMBBGZBsnlSebQ/eKCguSBeGKSf4O7BPnqVPmYGtpBYI7VSqoVqw+QcB7kPRjbqPwhYTpFbVj/RqNz/CT0Q==}
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
 
@@ -2498,7 +2489,7 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@modelcontextprotocol/sdk@1.29.0(zod@4.4.1)':
+  '@modelcontextprotocol/sdk@1.29.0(zod@4.4.3)':
     dependencies:
       '@hono/node-server': 1.19.14(hono@4.12.16)
       ajv: 8.20.0
@@ -2515,8 +2506,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.4.1
-      zod-to-json-schema: 3.25.2(zod@4.4.1)
+      zod: 4.4.3
+      zod-to-json-schema: 3.25.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -2621,18 +2612,6 @@ snapshots:
   '@semantic-release/error@3.0.0': {}
 
   '@semantic-release/error@4.0.0': {}
-
-  '@semantic-release/exec@7.1.0(semantic-release@25.0.3(typescript@6.0.3))':
-    dependencies:
-      '@semantic-release/error': 4.0.0
-      aggregate-error: 3.1.0
-      debug: 4.4.3
-      execa: 9.6.1
-      lodash-es: 4.18.1
-      parse-json: 8.3.0
-      semantic-release: 25.0.3(typescript@6.0.3)
-    transitivePeerDependencies:
-      - supports-color
 
   '@semantic-release/git@10.0.1(semantic-release@25.0.3(typescript@6.0.3))':
     dependencies:
@@ -3191,13 +3170,13 @@ snapshots:
     optionalDependencies:
       eslint-config-prettier: 10.1.8(eslint@10.2.1(jiti@2.6.1))
 
-  eslint-plugin-zod@3.11.0(eslint@10.2.1(jiti@2.6.1))(typescript@6.0.3)(zod@4.4.1):
+  eslint-plugin-zod@3.11.0(eslint@10.2.1(jiti@2.6.1))(typescript@6.0.3)(zod@4.4.3):
     dependencies:
       '@typescript-eslint/utils': 8.58.2(eslint@10.2.1(jiti@2.6.1))(typescript@6.0.3)
       esquery: 1.7.0
     optionalDependencies:
       eslint: 10.2.1(jiti@2.6.1)
-      zod: 4.4.1
+      zod: 4.4.3
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -4529,8 +4508,8 @@ snapshots:
 
   yoctocolors@2.1.2: {}
 
-  zod-to-json-schema@3.25.2(zod@4.4.1):
+  zod-to-json-schema@3.25.2(zod@4.4.3):
     dependencies:
-      zod: 4.4.1
+      zod: 4.4.3
 
-  zod@4.4.1: {}
+  zod@4.4.3: {}
