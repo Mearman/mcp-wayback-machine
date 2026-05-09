@@ -109,6 +109,9 @@ Check how many times https://example.com has been archived
 
 Archive a URL to the Wayback Machine using the SPN2 API.
 
+<details>
+<summary>Parameters</summary>
+
 | Parameter | Required | Description |
 |---|---|---|
 | `url` | Yes | The URL to archive |
@@ -119,9 +122,14 @@ Archive a URL to the Wayback Machine using the SPN2 API.
 | `forceGet` | No | Use simple HTTP GET instead of browser rendering |
 | `delayWbAvailability` | No | Delay indexing ~12 hours to reduce server load |
 
+</details>
+
 ### `get_archived_url`
 
 Retrieve an archived snapshot's content and metadata.
+
+<details>
+<summary>Parameters</summary>
 
 | Parameter | Required | Description |
 |---|---|---|
@@ -129,11 +137,14 @@ Retrieve an archived snapshot's content and metadata.
 | `timestamp` | No | Specific timestamp (`YYYYMMDDhhmmss`) or `"latest"` |
 | `modifier` | No | URL modifier: `id_` (raw), `im_` (screenshot), `js_` (JS), `cs_` (CSS) |
 
-Returns the snapshot's HTML/content body, content type, archived URL, and timestamp.
+</details>
 
 ### `search_archives`
 
 Search the CDX API for archived versions of a URL.
+
+<details>
+<summary>Parameters</summary>
 
 | Parameter | Required | Description |
 |---|---|---|
@@ -150,26 +161,41 @@ Search the CDX API for archived versions of a URL.
 | `page` | No | Page number for pagination |
 | `pageSize` | No | Results per page |
 
+</details>
+
 ### `check_archive_status`
 
 Check archival statistics for a URL — capture counts, yearly breakdowns, and first/last capture dates.
+
+<details>
+<summary>Parameters</summary>
 
 | Parameter | Required | Description |
 |---|---|---|
 | `url` | Yes | The URL to check |
 
+</details>
+
 ### `list_screenshots`
 
-List available screenshots for a URL. Screenshots are generated when captures are made with `captureScreenshot: true`.
+List available screenshots for a URL.
+
+<details>
+<summary>Parameters</summary>
 
 | Parameter | Required | Description |
 |---|---|---|
 | `url` | Yes | The URL to find screenshots for |
 | `limit` | No | Maximum results (default 10) |
 
+</details>
+
 ### `compare_snapshots`
 
 Compare two archived snapshots of a URL. Fetches the raw content of both and provides a visual diff URL.
+
+<details>
+<summary>Parameters</summary>
 
 | Parameter | Required | Description |
 |---|---|---|
@@ -177,7 +203,7 @@ Compare two archived snapshots of a URL. Fetches the raw content of both and pro
 | `timestampA` | No | First timestamp. Defaults to oldest available. |
 | `timestampB` | No | Second timestamp. Defaults to newest available. |
 
-If no timestamps are provided, automatically selects the oldest and newest available snapshots.
+</details>
 
 ### `clear_cache`
 
