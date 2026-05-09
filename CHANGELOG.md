@@ -1,3 +1,16 @@
+## [3.0.0](https://github.com/Mearman/mcp-wayback-machine/compare/v2.2.0...v3.0.0) (2026-05-09)
+
+### ⚠ BREAKING CHANGES
+
+* v3.0.0 major release - complete toolchain migration
+from Yarn/Biome to pnpm/ESLint, native Node type stripping, DI-based
+tool architecture, per-endpoint cache TTLs, SPN2 advanced options,
+CDX advanced features, and MCP Registry integration.
+
+### Bug Fixes
+
+* correct mcpName to match GitHub repo name ([7ad4e45](https://github.com/Mearman/mcp-wayback-machine/commit/7ad4e453653e3ae41176c6fc77b7a200f4c75385))
+
 ## [2.2.0](https://github.com/Mearman/mcp-wayback-machine/compare/v2.1.1...v2.2.0) (2026-05-09)
 
 ### Features
