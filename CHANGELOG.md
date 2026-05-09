@@ -1,3 +1,9 @@
+## [3.0.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.0.0...v3.0.1) (2026-05-09)
+
+### Chores
+
+* enable dependabot auto-merge for passing PRs ([1453f3e](https://github.com/Mearman/mcp-wayback-machine/commit/1453f3e93a4bd759c950c5b19fc805b32ce9562c))
+
 ## [3.0.0](https://github.com/Mearman/mcp-wayback-machine/compare/v2.2.0...v3.0.0) (2026-05-09)
 
 ### ⚠ BREAKING CHANGES
