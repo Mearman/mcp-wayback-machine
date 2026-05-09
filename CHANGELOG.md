@@ -1,3 +1,9 @@
+## [3.1.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.1.0...v3.1.1) (2026-05-09)
+
+### Documentation
+
+* fix license badge URL for shields.io ([2b7f593](https://github.com/Mearman/mcp-wayback-machine/commit/2b7f593a1f46c3a9b1e70e8ea15b72b8d621ce06))
+
 ## [3.1.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.0.2...v3.1.0) (2026-05-09)
 
 ### Features
