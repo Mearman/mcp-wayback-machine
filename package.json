@@ -95,5 +95,10 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.59.1"
   },
+  "pnpm": {
+    "overrides": {
+      "fast-uri": ">=3.1.2"
+    }
+  },
   "packageManager": "pnpm@10.33.1"
 }
