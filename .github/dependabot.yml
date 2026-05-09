@@ -10,6 +10,7 @@ updates:
     rebase-strategy: auto
     labels:
       - dependencies
+    automerge: true
     groups:
       dev-dependencies:
         applies-to: dev-dependencies
@@ -33,3 +34,4 @@ updates:
     labels:
       - ci
       - dependencies
+    automerge: true
