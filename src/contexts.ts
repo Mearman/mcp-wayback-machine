@@ -13,9 +13,7 @@ import pkg from "../package.json" with { type: "json" };
 const USER_AGENT = `mcp-wayback-machine/${pkg.version}`;
 
 /**
-
  * Internet Archive S3 credentials for higher SPN2 rate limits
-
  */
 interface Credentials {
     readonly accessKey: string;
@@ -46,7 +44,7 @@ function buildHeaders(
         ...overrides,
     };
 
-    // Inject S3 auth on save endpoints for higher rate limits
+    // Inject S3 auth on save endpoints for higher SPN2 rate limits
     if (credentials !== undefined && url.includes("web.archive.org/save")) {
         headers.Authorization = `LOW ${credentials.accessKey}:${credentials.secretKey}`;
     }

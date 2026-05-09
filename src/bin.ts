@@ -27,7 +27,7 @@ const server = new McpServer(
         instructions:
             "Interact with the Internet Archive's Wayback Machine to save, retrieve, search, and check the archival status of URLs. " +
             "Supports screenshot retrieval, full CDX search with filtering/pagination, " +
-            "and optional authentication for higher rate limits.",
+            "and optional authentication for higher SPN2 rate limits.",
     }
 );
 
@@ -37,7 +37,7 @@ server.registerTool(
         description:
             "Save a URL to the Wayback Machine for archival using the SPN2 API. " +
             "Supports capturing screenshots, outlinks, and conditional archiving. " +
-            "Set WAYBACK_ACCESS_KEY and WAYBACK_SECRET_KEY env vars for higher rate limits.",
+            "Set WAYBACK_ACCESS_KEY and WAYBACK_SECRET_KEY env vars for higher SPN2 rate limits.",
         inputSchema: SaveUrl,
     },
     async (args) => {
