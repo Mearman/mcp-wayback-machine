@@ -13,7 +13,30 @@ jobs:
         if: github.actor == 'dependabot[bot]'
         runs-on: ubuntu-latest
         steps:
-            - run: gh pr merge --auto --rebase "$PR_URL"
+            - name: Wait for CI to pass
+              run: |
+                  PR_NUMBER="${{ github.event.pull_request.number }}"
+                  echo "Waiting for CI on PR #$PR_NUMBER..."
+                  for i in $(seq 1 60); do
+                      STATUS=$(gh pr checks "$PR_NUMBER" 2>&1) || true
+                      if echo "$STATUS" | grep -q "all checks passed"; then
+                          echo "CI passed, proceeding to merge."
+                          exit 0
+                      fi
+                      if echo "$STATUS" | grep -q "fail"; then
+                          echo "CI failed, skipping auto-merge."
+                          exit 1
+                      fi
+                      echo "Checks pending... ($i/60)"
+                      sleep 30
+                  done
+                  echo "Timed out waiting for CI."
+                  exit 1
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Merge PR
+              run: gh pr merge --rebase "$PR_URL"
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   PR_URL: ${{ github.event.pull_request.html_url }}
