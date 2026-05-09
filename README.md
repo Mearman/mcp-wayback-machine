@@ -14,10 +14,17 @@ An MCP (Model Context Protocol) server and CLI tool for interacting with the Int
 
 Some agent harnesses provide a one-command install:
 
-**Claude Code:**
+**Claude Code (MCP):**
 
 ```bash
 claude mcp add wayback-machine -- npx -y mcp-wayback-machine
+```
+
+**Claude Code (plugin marketplace):**
+
+```bash
+/plugin marketplace add https://github.com/Mearman/mcp-wayback-machine.git
+/plugin install mcp-wayback-machine@mcp-wayback-machine
 ```
 
 **OpenAI Codex:**
