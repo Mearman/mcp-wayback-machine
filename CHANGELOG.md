@@ -1,3 +1,19 @@
+## [3.1.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.0.2...v3.1.0) (2026-05-09)
+
+### Features
+
+* add Claude Code plugin marketplace distribution ([7d892c9](https://github.com/Mearman/mcp-wayback-machine/commit/7d892c9742084ea3fd3416c5ee20aabd334b3b67))
+* add Claude Code plugin marketplace distribution ([fc35f78](https://github.com/Mearman/mcp-wayback-machine/commit/fc35f781f0e57df001dd91844c7b62caba2f464e))
+
+### Bug Fixes
+
+* remove invalid automerge from dependabot config ([b698469](https://github.com/Mearman/mcp-wayback-machine/commit/b6984692e6aede3323c9036470018a4b2ebb83a4))
+
+### Chores
+
+* configure dependabot auto-merge, cooldown, and commit conventions ([ae73e00](https://github.com/Mearman/mcp-wayback-machine/commit/ae73e006f1e5151984ca97815771c7582544399a))
+* **deps:** bump zod, eslint, typescript-eslint, add @semantic-release/exec ([61f7484](https://github.com/Mearman/mcp-wayback-machine/commit/61f7484dd9b24a0b8a13b8e40b5aaf561caef260))
+
 ## [3.0.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.0.1...v3.0.2) (2026-05-09)
 
 ### Bug Fixes
