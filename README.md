@@ -10,22 +10,59 @@ An MCP (Model Context Protocol) server and CLI tool for interacting with the Int
 
 ### As an MCP server
 
-Add to your MCP client configuration (Claude Desktop, VS Code, etc.):
+#### CLI shorthand
+
+Some agent harnesses provide a one-command install:
+
+**Claude Code:**
+
+```bash
+claude mcp add wayback-machine -- npx -y mcp-wayback-machine
+```
+
+**OpenAI Codex:**
+
+```bash
+codex mcp add wayback-machine -- npx -y mcp-wayback-machine
+```
+
+To include optional credentials:
+
+```bash
+claude mcp add wayback-machine --env WAYBACK_ACCESS_KEY=xxx --env WAYBACK_SECRET_KEY=xxx -- npx -y mcp-wayback-machine
+```
+
+```bash
+codex mcp add wayback-machine --env WAYBACK_ACCESS_KEY=xxx --env WAYBACK_SECRET_KEY=xxx -- npx -y mcp-wayback-machine
+```
+
+#### Manual configuration
+
+For harnesses that use config files, add the following to the appropriate section:
 
 ```json
 {
-  "mcpServers": {
-    "wayback-machine": {
-      "command": "npx",
-      "args": ["-y", "mcp-wayback-machine"],
-      "env": {
-        "WAYBACK_ACCESS_KEY": "your-access-key",
-        "WAYBACK_SECRET_KEY": "your-secret-key"
-      }
+  "wayback-machine": {
+    "command": "npx",
+    "args": ["-y", "mcp-wayback-machine"],
+    "env": {
+      "WAYBACK_ACCESS_KEY": "your-access-key",
+      "WAYBACK_SECRET_KEY": "your-secret-key"
     }
   }
 }
 ```
+
+| Harness | Config file | Config key |
+|---|---|---|
+| Claude Code | `.mcp.json` (project) / `~/.claude.json` (user) | `mcpServers` |
+| Codex | `~/.codex/config.toml` | `[mcp_servers.wayback-machine]` |
+| Gemini CLI | `~/.gemini/settings.json` | `mcpServers` |
+| Crush | `.crush.json` / `~/.config/crush/crush.json` | `mcp` |
+| Cline | `.cline/mcp.json` | `mcpServers` |
+| Cursor | `.cursor/mcp.json` | `mcpServers` |
+| Zed | `~/.config/zed/settings.json` | `context_servers` |
+| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` | `mcpServers` |
 
 The `env` block is optional — the server works anonymously without credentials. See [Credentials](#credentials) for details.
 
