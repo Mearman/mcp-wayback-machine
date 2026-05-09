@@ -1,3 +1,20 @@
+## [3.3.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.2.0...v3.3.0) (2026-05-09)
+
+### Features
+
+* **ci:** run dependabot auto-merge on schedule and manually ([7a1c162](https://github.com/Mearman/mcp-wayback-machine/commit/7a1c162c3e2eece0f9a296e9022751e2343df257))
+
+### Bug Fixes
+
+* **ci:** add checkout step to dependabot auto-merge ([1c8494d](https://github.com/Mearman/mcp-wayback-machine/commit/1c8494db6df25c21ee4bf21f4a3f92c02bed916d))
+* **ci:** use single quotes in dependabot auto-merge condition ([f72f3ee](https://github.com/Mearman/mcp-wayback-machine/commit/f72f3ee8eb90ea64cf927f55e0b9a9c397e202ba))
+* **ci:** wait for CI before auto-merging dependabot PRs ([61d2393](https://github.com/Mearman/mcp-wayback-machine/commit/61d2393b20ad42b29e00c84184354e056a218b80))
+
+### CI
+
+* add pnpm audit step and fix fast-uri vulnerability ([4080d25](https://github.com/Mearman/mcp-wayback-machine/commit/4080d253382c167dea464f38945d6e445a3aecc4))
+* **deps:** bump pnpm/action-setup from 6 to 6.0.5 ([5281e0d](https://github.com/Mearman/mcp-wayback-machine/commit/5281e0da4def6ba7f00ec878a48e96f721317dca))
+
 ## [3.2.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.1.2...v3.2.0) (2026-05-09)
 
 ### Features
