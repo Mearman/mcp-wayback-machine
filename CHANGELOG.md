@@ -1,3 +1,16 @@
+## [3.1.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.1.1...v3.1.2) (2026-05-09)
+
+### Bug Fixes
+
+* clarify credentials are for SPN2 rate limits specifically ([f204c18](https://github.com/Mearman/mcp-wayback-machine/commit/f204c18265eba5d5b31188cfb2f0279c317023a8))
+
+### Documentation
+
+* add quick examples section for agent prompts ([3e70d65](https://github.com/Mearman/mcp-wayback-machine/commit/3e70d659b0891f46ed9c0cd8361e0fe373dfe463))
+* collapse tool parameter tables into expandable details blocks ([9bf65f2](https://github.com/Mearman/mcp-wayback-machine/commit/9bf65f267d4a7fc17bd770b27ec738e13afa5f3d))
+* expand README with CLI shorthand installs and harness config table ([0514067](https://github.com/Mearman/mcp-wayback-machine/commit/05140677da0d9070bec16101423112ecd8c27b8b))
+* restructure credentials, CLI usage, and resources sections ([00e7297](https://github.com/Mearman/mcp-wayback-machine/commit/00e72978b9042e61c5e57d85fd832b1a0b0a9687))
+
 ## [3.1.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.1.0...v3.1.1) (2026-05-09)
 
 ### Documentation
