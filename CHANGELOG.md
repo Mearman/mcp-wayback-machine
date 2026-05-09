@@ -1,3 +1,27 @@
+## [2.2.0](https://github.com/Mearman/mcp-wayback-machine/compare/v2.1.1...v2.2.0) (2026-05-09)
+
+### Features
+
+* add cache management, screenshot listing, and snapshot comparison tools ([cd8c122](https://github.com/Mearman/mcp-wayback-machine/commit/cd8c122ca8ba618386b75638dc56dc0f9cbd45a5))
+* add server.json generation script for MCP Registry ([a578da7](https://github.com/Mearman/mcp-wayback-machine/commit/a578da74e72a75caa2cbf45ed2e0ea1403e24e16))
+* migrate toolchain and rewrite for strict TypeScript ([008434e](https://github.com/Mearman/mcp-wayback-machine/commit/008434ebac4216d3e30de7083c22100bbcf9fb5a))
+
+### Refactoring
+
+* extract shared response schemas ([9bf978d](https://github.com/Mearman/mcp-wayback-machine/commit/9bf978dc99455aa957db8027a96504b35b2af3be))
+
+### Documentation
+
+* update readme for v2 feature set ([e315381](https://github.com/Mearman/mcp-wayback-machine/commit/e315381f72b0af043e32695459202ad8437148c5))
+
+### Tests
+
+* cover SPN2 options and CDX advanced features ([09e50a0](https://github.com/Mearman/mcp-wayback-machine/commit/09e50a0bbea5a41246adaab2be8f393b74e19fe8))
+
+### Chores
+
+* remove tsconfig.tests.json ([e683d44](https://github.com/Mearman/mcp-wayback-machine/commit/e683d4454ada39dd53274a74cc38c2ea547bc839))
+
 ## [2.1.1](https://github.com/Mearman/mcp-wayback-machine/compare/v2.1.0...v2.1.1) (2026-05-09)
 
 ### Bug Fixes
