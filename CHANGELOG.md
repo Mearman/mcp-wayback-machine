@@ -1,3 +1,9 @@
+## [3.2.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.1.2...v3.2.0) (2026-05-09)
+
+### Features
+
+* add subpath exports for programmatic usage ([e146a6f](https://github.com/Mearman/mcp-wayback-machine/commit/e146a6fc78756354cdfd68abc556fe5e9722bb4d))
+
 ## [3.1.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.1.1...v3.1.2) (2026-05-09)
 
 ### Bug Fixes
