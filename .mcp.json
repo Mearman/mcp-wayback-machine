@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "wayback-machine": {
+            "command": "npx",
+            "args": ["-y", "mcp-wayback-machine"],
+            "env": {
+                "WAYBACK_ACCESS_KEY": "${WAYBACK_ACCESS_KEY}",
+                "WAYBACK_SECRET_KEY": "${WAYBACK_SECRET_KEY}"
+            }
+        }
+    }
+}

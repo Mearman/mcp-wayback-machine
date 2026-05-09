@@ -1,0 +1,13 @@
+{
+    "name": "mcp-wayback-machine",
+    "owner": {
+        "name": "Mearman"
+    },
+    "plugins": [
+        {
+            "name": "mcp-wayback-machine",
+            "source": "./",
+            "description": "MCP server for the Wayback Machine — save URLs, retrieve snapshots, search archives, check status, list screenshots, compare snapshots, and manage cache"
+        }
+    ]
+}
