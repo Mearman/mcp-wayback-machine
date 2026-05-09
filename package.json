@@ -13,6 +13,10 @@
     ".": {
       "types": "./dist/bin.d.ts",
       "import": "./dist/bin.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "files": [
