@@ -10,6 +10,10 @@ updates:
     rebase-strategy: auto
     labels:
       - dependencies
+    commit-message:
+      prefix: build(deps)
+    cooldown:
+      default-days: 7
     groups:
       dev-dependencies:
         dependency-type: development
@@ -33,3 +37,7 @@ updates:
     labels:
       - ci
       - dependencies
+    commit-message:
+      prefix: ci(deps)
+    cooldown:
+      default-days: 7
