@@ -91,6 +91,34 @@ describe("saveUrl", () => {
         assert.match(result.message, /Successfully submitted/);
     });
 
+    it("passes SPN2 options to save endpoint", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/save",
+                    status: 200,
+                    headers: {
+                        Location: "/web/20240101120000/https://example.com/",
+                    },
+                },
+            ])
+        );
+        const result = await saveUrl(
+            {
+                url: "https://example.com",
+                captureScreenshot: true,
+                captureOutlinks: true,
+                ifNotArchivedWithin: "30d",
+                jsBehaviorTimeout: 10,
+                forceGet: true,
+                delayWbAvailability: true,
+            },
+            ctx
+        );
+
+        assert.equal(result.success, true);
+    });
+
     it("handles rate limit (429)", async () => {
         const ctx = testContext(
             fakeFetch([

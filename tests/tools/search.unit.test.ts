@@ -174,4 +174,54 @@ describe("searchArchives", () => {
         assert.equal(result.success, true);
         assert.equal(result.totalResults, 0);
     });
+
+    it("passes CDX advanced options", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/cdx/search/cdx",
+                    body: JSON.stringify([cdxHeaders, cdxRow1]),
+                },
+            ])
+        );
+        const result = await searchArchives(
+            {
+                url: "https://example.com",
+                matchType: "exact",
+                offset: 5,
+                collapse: "timestamp:8",
+                resolveRevisits: true,
+                showDupeCount: true,
+                page: 2,
+                pageSize: 50,
+            },
+            ctx
+        );
+
+        assert.equal(result.success, true);
+        assert.equal(result.totalResults, 1);
+        const first = result.results?.[0];
+        assert.ok(first);
+        assert.equal(first.duplicateCount, undefined);
+    });
+
+    it("passes filter parameter", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/cdx/search/cdx",
+                    body: JSON.stringify([cdxHeaders, cdxRow1]),
+                },
+            ])
+        );
+        const result = await searchArchives(
+            {
+                url: "https://example.com",
+                filter: ["statuscode:200", "!mimetype:image.*"],
+            },
+            ctx
+        );
+
+        assert.equal(result.success, true);
+    });
 });
