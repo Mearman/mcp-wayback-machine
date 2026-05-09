@@ -1,3 +1,9 @@
+## [2.1.1](https://github.com/Mearman/mcp-wayback-machine/compare/v2.1.0...v2.1.1) (2026-05-09)
+
+### Bug Fixes
+
+* disable provenance for GitHub Packages publish ([112607c](https://github.com/Mearman/mcp-wayback-machine/commit/112607c3902db407b03cdb556a3afc3ff7f58df3))
+
 ## [2.1.0](https://github.com/Mearman/mcp-wayback-machine/compare/v2.0.0...v2.1.0) (2026-05-09)
 
 ### Features
