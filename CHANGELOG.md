@@ -1,3 +1,9 @@
+## [3.3.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.3.1...v3.3.2) (2026-05-09)
+
+### Documentation
+
+* add Claude Code plugin marketplace install commands ([0b83b3a](https://github.com/Mearman/mcp-wayback-machine/commit/0b83b3a06b5ae2a7fda3b19ec77369f495d9f997))
+
 ## [3.3.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.3.0...v3.3.1) (2026-05-09)
 
 ### Documentation
