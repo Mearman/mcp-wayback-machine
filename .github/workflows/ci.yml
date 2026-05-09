@@ -140,6 +140,6 @@ jobs:
       - name: Publish to GitHub Packages
         run: |
           npm pkg set name=@mearman/mcp-wayback-machine
-          pnpm publish --access public --no-git-checks
+          pnpm publish --access public --no-git-checks --no-provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
