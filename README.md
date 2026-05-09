@@ -282,6 +282,10 @@ pnpm validate     # typecheck + lint + test + build
 - [Save Page Now 2 (SPN2) API](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)
 - [Bots, LLMs, and Automated Access](https://archive.org/developers/bots.html)
 
+## Related
+
+- [internet-archive-skills](https://github.com/internetarchive/internet-archive-skills) — Official Claude Code skill for uploading to, downloading from, and searching the Internet Archive via the `ia` Python CLI. Complements this project (general IA operations) vs. this server (Wayback Machine MCP protocol).
+
 ## License
 
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](http://creativecommons.org/licenses/by-nc-sa/4.0/).
