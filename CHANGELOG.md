@@ -1,3 +1,9 @@
+## [3.3.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.3.0...v3.3.1) (2026-05-09)
+
+### Documentation
+
+* add related section linking internet-archive-skills ([b480e6f](https://github.com/Mearman/mcp-wayback-machine/commit/b480e6f05b19a2eecf18ec41d444940050bbb3fa))
+
 ## [3.3.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.2.0...v3.3.0) (2026-05-09)
 
 ### Features
