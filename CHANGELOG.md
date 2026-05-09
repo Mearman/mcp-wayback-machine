@@ -1,3 +1,37 @@
+## [2.1.0](https://github.com/Mearman/mcp-wayback-machine/compare/v2.0.0...v2.1.0) (2026-05-09)
+
+### Features
+
+* add in-memory and disk request caching for read operations ([d901348](https://github.com/Mearman/mcp-wayback-machine/commit/d90134856936bd2e39c71692ad978a13098d3b49))
+
+### Bug Fixes
+
+* pass NPM_TOKEN to semantic-release for npm auth verification ([043c694](https://github.com/Mearman/mcp-wayback-machine/commit/043c694312e34b3a563a419245e1b9e945a92259))
+* propagate semantic-release exit code in CI release step ([d34008d](https://github.com/Mearman/mcp-wayback-machine/commit/d34008dbeb663383908828c66dbd8008f2972bf7))
+* split eslint config into per-context tsconfig resolution ([54a33db](https://github.com/Mearman/mcp-wayback-machine/commit/54a33dbb84b87ab1c223f31822a9cb495188f220))
+
+### Refactoring
+
+* rewrite source for strict typescript and eslint compliance ([58a8415](https://github.com/Mearman/mcp-wayback-machine/commit/58a8415595eff5827143d59075fcdd2b9582d27b)), closes [#3](https://github.com/Mearman/mcp-wayback-machine/issues/3) [#18](https://github.com/Mearman/mcp-wayback-machine/issues/18)
+
+### Documentation
+
+* update README for pnpm, caching, and Node 22+ ([68c2156](https://github.com/Mearman/mcp-wayback-machine/commit/68c2156b31b33a0ed20323956b140d1087f48130))
+
+### Tests
+
+* add node:test suite with 80% coverage threshold ([97443ba](https://github.com/Mearman/mcp-wayback-machine/commit/97443bace96a552bf271858004313f8478be3215))
+
+### CI
+
+* add GitHub Packages publishing alongside npmjs ([ab58f25](https://github.com/Mearman/mcp-wayback-machine/commit/ab58f25a1a1a4e7d02213a4d4f09ba30052cfa5c))
+* rewrite workflow for pnpm, matrix builds, and OIDC publishing ([0dcf8e5](https://github.com/Mearman/mcp-wayback-machine/commit/0dcf8e57cfc2b5c08f8ebe890cfb59e775e516d7))
+
+### Chores
+
+* migrate toolchain from yarn/biome to pnpm/eslint/turbo ([26dac1c](https://github.com/Mearman/mcp-wayback-machine/commit/26dac1c557e8704f68bb9e03713a8d7a7cfadc73))
+* remove stale workflows, template artifacts, and vitest tests ([928d87b](https://github.com/Mearman/mcp-wayback-machine/commit/928d87b97046e3c01ce0a3ec9d35c8ef43b844df))
+
 # [2.0.0](https://github.com/Mearman/mcp-wayback-machine/compare/v1.0.4...v2.0.0) (2025-06-05)
 
 
