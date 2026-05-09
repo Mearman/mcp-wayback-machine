@@ -1,129 +1,137 @@
 /**
- * Get Archived URL tool — Retrieves archived versions of URLs
+ * Retrieve tool — resolves archived URLs and fetches snapshot content.
+ * Supports URL modifiers (id_, im_, js_, cs_) for different content views.
  */
 
-import { z } from "zod";
-import { cachingFetcher } from "../utils/cache.js";
-import { HttpError } from "../utils/http.js";
-import { waybackRateLimiter } from "../utils/rate-limit.js";
-import {
-	timestampSchema,
-	validateInput,
-	validateUrl,
-} from "../utils/validation.js";
+import * as z from "zod";
+import { AvailabilityResponse } from "../schemas.ts";
+import { HttpError } from "../utils/http.ts";
 
-export const GetArchivedUrlSchema = z.object({
-	url: z.url().describe("The URL to retrieve from the Wayback Machine"),
-	timestamp: z
-		.string()
-		.optional()
-		.describe(
-			'Specific timestamp (YYYYMMDDhhmmss) or "latest" for most recent',
-		),
+import type { ToolContext } from "./context.ts";
+
+export const GetArchivedUrl = z.object({
+    url: z
+        .url()
+        .meta({ description: "The URL to retrieve from the Wayback Machine" }),
+    timestamp: z.string().trim().optional().meta({
+        description:
+            'Specific timestamp (YYYYMMDDhhmmss) or "latest" for most recent',
+    }),
+    modifier: z.enum(["id_", "im_", "js_", "cs_"]).optional().meta({
+        description:
+            "URL modifier: id_ (raw content, no toolbar), im_ (screenshot image), js_ (JavaScript), cs_ (CSS). Default: id_",
+    }),
 });
 
-export type GetArchivedUrlInput = z.infer<typeof GetArchivedUrlSchema>;
-
-const AvailabilityResponseSchema = z.object({
-	url: z.string(),
-	archived_snapshots: z.object({
-		closest: z
-			.object({
-				status: z.string(),
-				available: z.boolean(),
-				url: z.string(),
-				timestamp: z.string(),
-			})
-			.optional(),
-	}),
-});
+export type GetArchivedUrl = z.output<typeof GetArchivedUrl>;
 
 interface RetrieveResult {
-	success: boolean;
-	message: string;
-	archivedUrl?: string;
-	timestamp?: string;
-	available?: boolean;
+    success: boolean;
+    message: string;
+    archivedUrl?: string;
+    timestamp?: string;
+    available?: boolean;
+    content?: string;
+    contentType?: string;
 }
 
-const USER_AGENT = "mcp-wayback-machine/2.0.0";
-
 /**
- * Get an archived version of a URL
+
+ * * Get an archived version of a URL, optionally fetching the snapshot content.
+
  */
 export async function getArchivedUrl(
-	input: GetArchivedUrlInput,
+    input: GetArchivedUrl,
+    ctx: ToolContext
 ): Promise<RetrieveResult> {
-	const { url, timestamp } = input;
+    const { url, timestamp, modifier } = input;
 
-	try {
-		const validatedUrl = validateUrl(url);
-		const validatedTimestamp =
-			timestamp !== undefined && timestamp !== "latest"
-				? validateInput(timestampSchema, timestamp)
-				: timestamp;
+    try {
+        const apiUrl = new URL("https://archive.org/wayback/available");
+        apiUrl.searchParams.set("url", url);
+        if (timestamp !== undefined && timestamp !== "latest") {
+            apiUrl.searchParams.set("timestamp", timestamp);
+        }
 
-		await waybackRateLimiter.waitForSlot();
+        const data = await ctx.fetchJSON(
+            apiUrl.toString(),
+            AvailabilityResponse
+        );
 
-		const apiUrl = new URL("https://archive.org/wayback/available");
-		apiUrl.searchParams.set("url", validatedUrl);
-		if (validatedTimestamp !== undefined) {
-			apiUrl.searchParams.set("timestamp", validatedTimestamp);
-		}
+        if (data.archived_snapshots.closest?.available) {
+            const snapshot = data.archived_snapshots.closest;
+            const mod = modifier ?? "id_";
 
-		waybackRateLimiter.recordRequest();
-		const response = await cachingFetcher.fetch(apiUrl.toString(), {
-			headers: {
-				"User-Agent": USER_AGENT,
-			},
-		});
+            // Reconstruct the archived URL with the requested modifier
+            const ts = snapshot.timestamp;
+            const snapshotUrl = `https://web.archive.org/web/${ts}${mod}/${url}`;
 
-		const text = await response.text();
-		const data = AvailabilityResponseSchema.parse(JSON.parse(text));
+            // Fetch the actual snapshot content
+            const snapshotResponse = await ctx.fetch(snapshotUrl);
+            const body = await snapshotResponse.text();
+            const contentType =
+                snapshotResponse.headers.get("Content-Type") ?? "text/html";
 
-		if (data.archived_snapshots.closest?.available) {
-			const snapshot = data.archived_snapshots.closest;
-			return {
-				success: true,
-				message: `Found archived version of ${validatedUrl}`,
-				archivedUrl: snapshot.url,
-				timestamp: snapshot.timestamp,
-				available: true,
-			};
-		}
+            return {
+                success: true,
+                message: `Found archived version of ${url}`,
+                archivedUrl: snapshotUrl,
+                timestamp: ts,
+                available: true,
+                content: body,
+                contentType,
+            };
+        }
 
-		// If no snapshot found, try direct construction
-		if (
-			validatedTimestamp !== undefined &&
-			validatedTimestamp !== "latest"
-		) {
-			const directUrl = `https://web.archive.org/web/${validatedTimestamp}/${validatedUrl}/`;
-			return {
-				success: true,
-				message:
-					"No confirmed archive found. You can try this URL directly:",
-				archivedUrl: directUrl,
-				timestamp: validatedTimestamp,
-				available: false,
-			};
-		}
+        // If no snapshot found, try direct construction for specific timestamps
+        if (timestamp !== undefined && timestamp !== "latest") {
+            const mod = modifier ?? "id_";
+            const directUrl = `https://web.archive.org/web/${timestamp}${mod}/${url}/`;
 
-		return {
-			success: false,
-			message: `No archived versions found for ${validatedUrl}`,
-			available: false,
-		};
-	} catch (error) {
-		if (error instanceof HttpError) {
-			return {
-				success: false,
-				message: `Failed to retrieve archived URL: ${error.message}`,
-			};
-		}
+            try {
+                const directResponse = await ctx.fetch(directUrl);
+                const body = await directResponse.text();
+                const contentType =
+                    directResponse.headers.get("Content-Type") ?? "text/html";
 
-		return {
-			success: false,
-			message: `Failed to retrieve archived URL: ${error instanceof Error ? error.message : "Unknown error"}`,
-		};
-	}
+                return {
+                    success: true,
+                    message:
+                        "Retrieved snapshot via direct URL (availability API had no match)",
+                    archivedUrl: directUrl,
+                    timestamp,
+                    available: false,
+                    content: body,
+                    contentType,
+                };
+            } catch {
+                // Direct fetch also failed
+                return {
+                    success: true,
+                    message: `No archived version found for ${url} at ${timestamp}`,
+                    archivedUrl: directUrl,
+                    timestamp,
+                    available: false,
+                };
+            }
+        }
+
+        return {
+            success: false,
+            message: `No archived versions found for ${url}`,
+            available: false,
+        };
+    } catch (error) {
+        if (error instanceof HttpError) {
+            return {
+                success: false,
+                message: `Failed to retrieve archived URL: ${error.message}`,
+            };
+        }
+
+        return {
+            success: false,
+            message: `Failed to retrieve archived URL: ${error instanceof Error ? error.message : "Unknown error"}`,
+        };
+    }
 }

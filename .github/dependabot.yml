@@ -1,0 +1,35 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    rebase-strategy: auto
+    labels:
+      - dependencies
+    groups:
+      dev-dependencies:
+        applies-to: dev-dependencies
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+      production-dependencies:
+        applies-to: production-dependencies
+        patterns:
+          - "*"
+        update-types:
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - ci
+      - dependencies

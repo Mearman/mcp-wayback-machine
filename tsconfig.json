@@ -1,21 +1,22 @@
 {
-	"compilerOptions": {
-		"target": "ES2024",
-		"module": "Node16",
-		"moduleResolution": "Node16",
-		"outDir": "dist",
-		"rootDir": "src",
-		"strict": true,
-		"noUncheckedIndexedAccess": true,
-		"exactOptionalPropertyTypes": true,
-		"noImplicitReturns": true,
-		"noFallthroughCasesInSwitch": true,
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
-		"skipLibCheck": true,
-		"types": ["node"]
-	},
-	"include": ["src"],
-	"exclude": ["node_modules", "dist"]
+    "compilerOptions": {
+        "target": "ES2024",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "skipLibCheck": true,
+        "incremental": true,
+        "types": ["node"],
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "rewriteRelativeImportExtensions": true,
+        "erasableSyntaxOnly": true,
+        "verbatimModuleSyntax": true
+    },
+    "include": ["src", "tests"],
+    "exclude": ["node_modules", "dist"]
 }

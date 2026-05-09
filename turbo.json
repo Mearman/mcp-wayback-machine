@@ -1,37 +1,37 @@
 {
-	"$schema": "https://turbo.build/schema.json",
-	"tasks": {
-		"_typecheck": {
-			"inputs": ["src/**/*.ts", "tests/**/*.ts", "tsconfig.json"],
-			"outputs": [".tsbuildinfo"]
-		},
-		"_lint": {
-			"inputs": ["src/**/*.ts", "tests/**/*.ts", "eslint.config.ts"],
-			"outputs": [".eslintcache"]
-		},
-		"_lint:fix": {
-			"inputs": ["src/**/*.ts", "tests/**/*.ts", "eslint.config.ts"],
-			"outputs": [".eslintcache"],
-			"cache": false
-		},
-		"_test": {
-			"dependsOn": ["_typecheck"],
-			"inputs": ["src/**/*.ts", "tests/**/*.ts"],
-			"outputs": []
-		},
-		"_test:coverage": {
-			"dependsOn": ["_typecheck"],
-			"inputs": ["src/**/*.ts", "tests/**/*.ts"],
-			"outputs": ["coverage/**"],
-			"cache": false
-		},
-		"_build": {
-			"dependsOn": ["_typecheck", "_lint", "_test"],
-			"inputs": ["src/**/*.ts", "tsconfig.json", "package.json"],
-			"outputs": ["dist/**"]
-		},
-		"_validate": {
-			"dependsOn": ["_build"]
-		}
-	}
+    "$schema": "https://turbo.build/schema.json",
+    "tasks": {
+        "_typecheck": {
+            "inputs": ["src/**/*.ts", "tests/**/*.ts", "tsconfig.json"],
+            "outputs": [".tsbuildinfo"]
+        },
+        "_lint": {
+            "inputs": ["src/**/*.ts", "tests/**/*.ts", "eslint.config.ts"],
+            "outputs": [".eslintcache"]
+        },
+        "_lint:fix": {
+            "inputs": ["src/**/*.ts", "tests/**/*.ts", "eslint.config.ts"],
+            "outputs": [".eslintcache"],
+            "cache": false
+        },
+        "_test": {
+            "dependsOn": ["_typecheck"],
+            "inputs": ["src/**/*.ts", "tests/**/*.ts"]
+        },
+        "_test:coverage": {
+            "dependsOn": ["_typecheck"],
+            "inputs": ["src/**/*.ts", "tests/**/*.ts"]
+        },
+        "_build": {
+            "dependsOn": ["_typecheck", "_lint"],
+            "inputs": ["src/**/*.ts", "tsconfig.json", "package.json"],
+            "outputs": ["dist/**"]
+        },
+        "_check": {
+            "dependsOn": ["_typecheck", "_lint", "_build"]
+        },
+        "_validate": {
+            "dependsOn": ["_check", "_test"]
+        }
+    }
 }

@@ -1,17 +1,18 @@
 {
   "name": "mcp-wayback-machine",
+  "mcpName": "io.github.mearman/wayback-machine",
   "version": "2.1.1",
   "description": "MCP server and CLI tool for interacting with the Wayback Machine without API keys",
-  "main": "./dist/index.js",
+  "main": "./dist/bin.js",
   "type": "module",
   "bin": {
-    "mcp-wayback-machine": "dist/index.js",
-    "wayback": "dist/index.js"
+    "mcp-wayback-machine": "dist/bin.js",
+    "wayback": "dist/bin.js"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./dist/bin.d.ts",
+      "import": "./dist/bin.js"
     }
   },
   "files": [
@@ -22,24 +23,26 @@
   ],
   "scripts": {
     "build": "turbo run _build",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "node --watch src/bin.ts",
+    "start": "node dist/bin.js",
     "_typecheck": "tsc --noEmit",
     "_lint": "eslint --cache",
     "_lint:fix": "eslint --cache --fix",
-    "_test": "tsx --test 'tests/**/*.unit.test.ts' 'tests/**/*.integration.test.ts'",
-    "_test:coverage": "tsx --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 --test-coverage-include='src/**/*.ts' 'tests/**/*.unit.test.ts' 'tests/**/*.integration.test.ts'",
-    "_build": "tsc && chmod +x dist/index.js",
+    "_test": "node --test 'tests/**/*.unit.test.ts' 'tests/**/*.integration.test.ts'",
+    "_test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=80 --test-coverage-branches=80 --test-coverage-functions=80 --test-coverage-include='src/**/*.ts' 'tests/**/*.unit.test.ts' 'tests/**/*.integration.test.ts'",
+    "_build": "tsc -p tsconfig.build.json && chmod +x dist/bin.js",
     "typecheck": "turbo run _typecheck",
     "lint": "turbo run _lint",
     "lint:fix": "turbo run _lint:fix",
     "test": "turbo run _test",
     "test:coverage": "turbo run _test:coverage",
+    "check": "turbo run _check",
     "validate": "turbo run _validate",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run",
     "prepare": "husky",
-    "prepublishOnly": "pnpm validate"
+    "prepublishOnly": "pnpm validate",
+    "generate:server-json": "node --experimental-strip-types scripts/generate-server-json.ts"
   },
   "keywords": [
     "mcp",
@@ -78,11 +81,11 @@
     "eslint": "10.2.1",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.5",
+    "eslint-plugin-zod": "3.11.0",
     "husky": "9.1.7",
     "lint-staged": "16.4.0",
     "prettier": "3.8.3",
     "semantic-release": "25.0.3",
-    "tsx": "4.21.0",
     "turbo": "2.9.7",
     "typescript": "6.0.3",
     "typescript-eslint": "8.58.2"

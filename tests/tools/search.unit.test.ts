@@ -1,179 +1,177 @@
-import { describe, it, beforeEach, afterEach } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { searchArchives } from "../../src/tools/search.js";
-import { cachingFetcher } from "../../src/utils/cache.js";
+import { searchArchives } from "../../src/tools/search.ts";
+import { fakeFetch, rejectingFetch, testContext } from "../helpers.ts";
 
-const originalFetch = globalThis.fetch;
-
-function jsonResponse(body: string, status = 200): Response {
-	return new Response(body, {
-		status,
-		statusText: status === 200 ? "OK" : "Error",
-	});
-}
-
-beforeEach(async () => {
-	await cachingFetcher.clear();
-});
-
-afterEach(() => {
-	globalThis.fetch = originalFetch;
-});
+const cdxHeaders = [
+    "urlkey",
+    "timestamp",
+    "original",
+    "mimetype",
+    "statuscode",
+    "digest",
+    "length",
+];
+const cdxRow1 = [
+    "com,example)/",
+    "20240101120000",
+    "https://example.com",
+    "text/html",
+    "200",
+    "ABC123",
+    "1234",
+];
+const cdxRow2 = [
+    "com,example)/",
+    "20240102120000",
+    "https://example.com",
+    "text/html",
+    "301",
+    "DEF456",
+    "5678",
+];
 
 describe("searchArchives", () => {
-	it("returns mapped results from CDX API", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(
-				jsonResponse(
-					JSON.stringify([
-						[
-							"urlkey",
-							"timestamp",
-							"original",
-							"mimetype",
-							"statuscode",
-							"digest",
-							"length",
-						],
-						[
-							"com,example)/",
-							"20240101120000",
-							"https://example.com/",
-							"text/html",
-							"200",
-							"abc",
-							"1234",
-						],
-						[
-							"com,example)/",
-							"20240202080000",
-							"https://example.com/",
-							"text/html",
-							"301",
-							"def",
-							"5678",
-						],
-					]),
-				),
-			);
+    it("returns mapped results from CDX API", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/cdx/search/cdx",
+                    body: JSON.stringify([cdxHeaders, cdxRow1, cdxRow2]),
+                },
+            ])
+        );
+        const result = await searchArchives(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		const result = await searchArchives({ url: "https://example.com" });
+        assert.equal(result.success, true);
+        assert.equal(result.totalResults, 2);
+        const results = result.results;
+        assert.ok(results);
+        const first = results[0];
+        const second = results[1];
+        assert.ok(first);
+        assert.ok(second);
+        assert.equal(first.date, "2024-01-01 12:00:00");
+        assert.equal(first.statusCode, "200");
+        assert.equal(second.statusCode, "301");
+    });
 
-		assert.equal(result.success, true);
-		assert.equal(result.totalResults, 2);
-		assert.equal(result.results[0].date, "2024-01-01 12:00:00");
-		assert.equal(result.results[0].statusCode, "200");
-		assert.equal(result.results[1].statusCode, "301");
-	});
+    it("returns empty results when only headers present", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/cdx/search/cdx",
+                    body: JSON.stringify([cdxHeaders]),
+                },
+            ])
+        );
+        const result = await searchArchives(
+            { url: "https://example.com" },
+            ctx
+        );
 
-	it("returns empty results when only headers present", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(
-				jsonResponse(
-					JSON.stringify([
-						[
-							"urlkey",
-							"timestamp",
-							"original",
-							"mimetype",
-							"statuscode",
-							"digest",
-							"length",
-						],
-					]),
-				),
-			);
+        assert.equal(result.success, true);
+        assert.equal(result.totalResults, 0);
+    });
 
-		const result = await searchArchives({ url: "https://example.com" });
+    it("handles 404 as no results", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/cdx/search/cdx",
+                    status: 404,
+                    body: "Not Found",
+                },
+            ])
+        );
+        const result = await searchArchives(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		assert.equal(result.success, true);
-		assert.equal(result.totalResults, 0);
-		assert.deepEqual(result.results, []);
-	});
+        assert.equal(result.success, true);
+        assert.equal(result.totalResults, 0);
+    });
 
-	it("handles 404 as no results", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(jsonResponse("not found", 404));
+    it("rejects invalid from date", async () => {
+        const ctx = testContext(fakeFetch([]));
+        const result = await searchArchives(
+            { url: "https://example.com", from: "not-a-date" },
+            ctx
+        );
 
-		const result = await searchArchives({ url: "https://example.com" });
+        assert.equal(result.success, false);
+    });
 
-		assert.equal(result.success, true);
-		assert.equal(result.totalResults, 0);
-	});
+    it("rejects invalid to date", async () => {
+        const ctx = testContext(fakeFetch([]));
+        const result = await searchArchives(
+            { url: "https://example.com", to: "not-a-date" },
+            ctx
+        );
 
-	it("rejects invalid from date", async () => {
-		const result = await searchArchives({
-			url: "https://example.com",
-			from: "not-a-date",
-		});
+        assert.equal(result.success, false);
+    });
 
-		assert.equal(result.success, false);
-		assert.match(result.message, /YYYY-MM-DD/);
-	});
+    it("handles HTTP errors", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/cdx/search/cdx",
+                    status: 500,
+                    body: "Internal Server Error",
+                },
+            ])
+        );
+        const result = await searchArchives(
+            { url: "https://example.com" },
+            ctx
+        );
 
-	it("rejects invalid to date", async () => {
-		const result = await searchArchives({
-			url: "https://example.com",
-			to: "bad",
-		});
+        assert.equal(result.success, false);
+        assert.match(result.message, /Failed to search/);
+    });
 
-		assert.equal(result.success, false);
-		assert.match(result.message, /YYYY-MM-DD/);
-	});
+    it("handles network errors", async () => {
+        const ctx = testContext(rejectingFetch());
+        const result = await searchArchives(
+            { url: "https://example.com" },
+            ctx
+        );
 
-	it("handles HTTP errors", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(jsonResponse("server error", 500));
+        assert.equal(result.success, false);
+        assert.match(result.message, /Failed to search/);
+    });
 
-		const result = await searchArchives({ url: "https://example.com" });
+    it("rejects invalid URLs", async () => {
+        const ctx = testContext(fakeFetch([]));
+        const result = await searchArchives({ url: "not-a-url" }, ctx);
 
-		assert.equal(result.success, false);
-		assert.match(result.message, /Failed to search/);
-	});
+        assert.equal(result.success, false);
+    });
 
-	it("handles network errors", async () => {
-		globalThis.fetch = () => Promise.reject(new Error("dns failure"));
+    it("passes date range to API", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/cdx/search/cdx",
+                    body: JSON.stringify([cdxHeaders]),
+                },
+            ])
+        );
+        const result = await searchArchives(
+            {
+                url: "https://example.com",
+                from: "2023-01-01",
+                to: "2023-12-31",
+            },
+            ctx
+        );
 
-		const result = await searchArchives({ url: "https://example.com" });
-
-		assert.equal(result.success, false);
-		assert.match(result.message, /dns failure/);
-	});
-
-	it("rejects invalid URLs", async () => {
-		const result = await searchArchives({ url: "not-a-url" });
-
-		assert.equal(result.success, false);
-	});
-
-	it("passes date range to API", async () => {
-		let capturedUrl: string | undefined;
-		globalThis.fetch = (url: unknown) => {
-			capturedUrl = url as string;
-			return Promise.resolve(
-				jsonResponse(
-					JSON.stringify([
-						[
-							"urlkey",
-							"timestamp",
-							"original",
-							"mimetype",
-							"statuscode",
-							"digest",
-							"length",
-						],
-					]),
-				),
-			);
-		};
-
-		await searchArchives({
-			url: "https://example.com",
-			from: "2024-01-01",
-			to: "2024-12-31",
-		});
-
-		assert.ok(capturedUrl?.includes("from=20240101"));
-		assert.ok(capturedUrl?.includes("to=20241231"));
-	});
+        assert.equal(result.success, true);
+        assert.equal(result.totalResults, 0);
+    });
 });

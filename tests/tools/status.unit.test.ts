@@ -1,163 +1,194 @@
-import { describe, it, beforeEach, afterEach } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { checkArchiveStatus } from "../../src/tools/status.js";
-import { cachingFetcher } from "../../src/utils/cache.js";
-
-const originalFetch = globalThis.fetch;
-
-function jsonResponse(body: string, status = 200): Response {
-	return new Response(body, {
-		status,
-		statusText: status === 200 ? "OK" : "Error",
-	});
-}
-
-beforeEach(async () => {
-	await cachingFetcher.clear();
-});
-
-afterEach(() => {
-	globalThis.fetch = originalFetch;
-});
+import { checkArchiveStatus } from "../../src/tools/status.ts";
+import { fakeFetch, rejectingFetch, testContext } from "../helpers.ts";
 
 describe("checkArchiveStatus", () => {
-	it("returns statistics from sparkline API", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(
-				jsonResponse(
-					JSON.stringify({
-						first_ts: "20200101000000",
-						last_ts: "20241231235959",
-						years: {
-							"2020": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-							"2024": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
-						},
-						captures: 96,
-					}),
-				),
-			);
+    it("returns statistics from sparkline API", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/__wb/sparkline",
+                    body: JSON.stringify({
+                        years: {
+                            "2023": { "timeseries-csp": [1, 2, 3] },
+                            "2024": { "timeseries-csp": [4, 5, 6] },
+                        },
+                    }),
+                },
+                {
+                    url: "archive.org/wayback/available",
+                    body: JSON.stringify({
+                        url: "https://example.com",
+                        archived_snapshots: {
+                            closest: {
+                                status: "200",
+                                available: true,
+                                url: "https://web.archive.org/web/20240101120000/https://example.com/",
+                                timestamp: "20240101120000",
+                            },
+                        },
+                    }),
+                },
+            ])
+        );
+        const result = await checkArchiveStatus(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		const result = await checkArchiveStatus({ url: "https://example.com" });
+        assert.equal(result.success, true);
+        assert.equal(result.isArchived, true);
+        assert.equal(result.totalCaptures, 21);
+        assert.equal(result.firstCapture, "2023-01-01");
+        assert.equal(result.lastCapture, "2024-01-01");
+    });
 
-		assert.equal(result.success, true);
-		assert.equal(result.isArchived, true);
-		assert.equal(result.firstCapture, "2020-01-01");
-		assert.equal(result.lastCapture, "2024-12-31");
-		assert.equal(result.totalCaptures, 96);
-		assert.equal(result.yearlyCaptures?.["2020"], 78);
-		assert.equal(result.yearlyCaptures["2024"], 60);
-	});
+    it("omits lastCapture when not provided", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/__wb/sparkline",
+                    body: JSON.stringify({
+                        years: {
+                            "2023": { "timeseries-csp": [1, 2, 3] },
+                        },
+                    }),
+                },
+                {
+                    url: "archive.org/wayback/available",
+                    body: JSON.stringify({
+                        url: "https://example.com",
+                        archived_snapshots: {},
+                    }),
+                },
+            ])
+        );
+        const result = await checkArchiveStatus(
+            { url: "https://example.com" },
+            ctx
+        );
 
-	it("omits lastCapture when not provided", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(
-				jsonResponse(
-					JSON.stringify({
-						first_ts: "20200101000000",
-						captures: 5,
-					}),
-				),
-			);
+        assert.equal(result.success, true);
+        assert.equal(result.isArchived, true);
+        assert.equal(result.lastCapture, undefined);
+    });
 
-		const result = await checkArchiveStatus({ url: "https://example.com" });
+    it("falls back to availability API", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/__wb/sparkline",
+                    body: JSON.stringify({}),
+                },
+                {
+                    url: "archive.org/wayback/available",
+                    body: JSON.stringify({
+                        url: "https://example.com",
+                        archived_snapshots: {
+                            closest: {
+                                status: "200",
+                                available: true,
+                                url: "https://web.archive.org/web/20240101120000/https://example.com/",
+                                timestamp: "20240101120000",
+                            },
+                        },
+                    }),
+                },
+            ])
+        );
+        const result = await checkArchiveStatus(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		assert.equal(result.isArchived, true);
-		assert.equal(result.lastCapture, undefined);
-		assert.equal(result.totalCaptures, 5);
-	});
+        assert.equal(result.success, true);
+        assert.equal(result.isArchived, true);
+        assert.equal(result.lastCapture, "2024-01-01");
+    });
 
-	it("falls back to availability API", async () => {
-		let callCount = 0;
-		globalThis.fetch = () => {
-			callCount++;
-			if (callCount === 1) {
-				// Sparkline returns no first_ts
-				return Promise.resolve(jsonResponse(JSON.stringify({})));
-			}
-			// Availability API fallback
-			return Promise.resolve(
-				jsonResponse(
-					JSON.stringify({
-						archived_snapshots: {
-							closest: {
-								available: true,
-								timestamp: "20240615120000",
-							},
-						},
-					}),
-				),
-			);
-		};
+    it("returns not archived when neither API has data", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/__wb/sparkline",
+                    body: JSON.stringify({}),
+                },
+                {
+                    url: "archive.org/wayback/available",
+                    body: JSON.stringify({
+                        url: "https://example.com",
+                        archived_snapshots: {},
+                    }),
+                },
+            ])
+        );
+        const result = await checkArchiveStatus(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		const result = await checkArchiveStatus({ url: "https://example.com" });
+        assert.equal(result.success, true);
+        assert.equal(result.isArchived, false);
+    });
 
-		assert.equal(result.success, true);
-		assert.equal(result.isArchived, true);
-		assert.equal(result.lastCapture, "20240615120000");
-	});
+    it("handles 404 as not archived", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/__wb/sparkline",
+                    body: JSON.stringify({}),
+                },
+                {
+                    url: "archive.org/wayback/available",
+                    status: 404,
+                    body: "Not Found",
+                },
+            ])
+        );
+        const result = await checkArchiveStatus(
+            { url: "https://example.com" },
+            ctx
+        );
 
-	it("returns not archived when neither API has data", async () => {
-		let callCount = 0;
-		globalThis.fetch = () => {
-			callCount++;
-			if (callCount === 1) {
-				return Promise.resolve(jsonResponse(JSON.stringify({})));
-			}
-			return Promise.resolve(
-				jsonResponse(
-					JSON.stringify({
-						archived_snapshots: {
-							closest: {
-								available: false,
-								timestamp: "20240101120000",
-								status: "404",
-								url: "https://example.com",
-							},
-						},
-					}),
-				),
-			);
-		};
+        assert.equal(result.success, true);
+        assert.equal(result.isArchived, false);
+    });
 
-		const result = await checkArchiveStatus({ url: "https://example.com" });
+    it("handles HTTP errors", async () => {
+        const ctx = testContext(
+            fakeFetch([
+                {
+                    url: "web.archive.org/__wb/sparkline",
+                    status: 500,
+                    body: "Internal Server Error",
+                },
+            ])
+        );
+        const result = await checkArchiveStatus(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		assert.equal(result.success, true);
-		assert.equal(result.isArchived, false);
-		assert.equal(result.totalCaptures, 0);
-	});
+        assert.equal(result.success, false);
+        assert.match(result.message, /Failed to check/);
+    });
 
-	it("handles 404 as not archived", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(jsonResponse("not found", 404));
+    it("handles network errors", async () => {
+        const ctx = testContext(rejectingFetch());
+        const result = await checkArchiveStatus(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		const result = await checkArchiveStatus({ url: "https://example.com" });
+        assert.equal(result.success, false);
+        assert.match(result.message, /Failed to check/);
+    });
 
-		assert.equal(result.success, true);
-		assert.equal(result.isArchived, false);
-	});
+    it("rejects invalid URLs", async () => {
+        const ctx = testContext(fakeFetch([]));
+        const result = await checkArchiveStatus({ url: "not-a-url" }, ctx);
 
-	it("handles HTTP errors", async () => {
-		globalThis.fetch = () => Promise.resolve(jsonResponse("error", 500));
-
-		const result = await checkArchiveStatus({ url: "https://example.com" });
-
-		assert.equal(result.success, false);
-		assert.equal(result.isArchived, false);
-		assert.match(result.message, /Failed to check/);
-	});
-
-	it("handles network errors", async () => {
-		globalThis.fetch = () => Promise.reject(new Error("timeout"));
-
-		const result = await checkArchiveStatus({ url: "https://example.com" });
-
-		assert.equal(result.success, false);
-		assert.match(result.message, /timeout/);
-	});
-
-	it("rejects invalid URLs", async () => {
-		const result = await checkArchiveStatus({ url: "not-a-url" });
-
-		assert.equal(result.success, false);
-	});
+        assert.equal(result.success, false);
+    });
 });

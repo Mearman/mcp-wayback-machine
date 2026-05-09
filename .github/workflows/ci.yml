@@ -19,24 +19,49 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
           node-version-file: .tool-versions
-
-      - run: corepack enable
+          cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
       - name: Lint commit messages
         run: |
-          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+          pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
 
-  validate:
-    name: Node ${{ matrix.node-version }}
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .tool-versions
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/cache@v5
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - run: pnpm check
+
+  test:
+    name: Test — Node ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -45,34 +70,30 @@ jobs:
           - 24
           - 26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-
-      - run: corepack enable
+          cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm typecheck
+      - uses: actions/cache@v5
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
 
-      - run: pnpm lint
-
-      - name: Test with coverage (primary)
-        if: matrix.node-version == 24
-        run: pnpm test:coverage
-
-      - name: Test (secondary)
-        if: matrix.node-version != 24
-        run: pnpm test
-
-      - run: pnpm build
+      - run: pnpm test
 
   release:
     name: Release to npmjs
     runs-on: ubuntu-latest
-    needs: validate
+    needs: [check, test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     outputs:
       released: ${{ steps.detect-release.outputs.released }}
@@ -82,19 +103,27 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
           node-version-file: .tool-versions
+          cache: pnpm
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
-      - run: corepack enable
-
       - run: pnpm install --frozen-lockfile
+
+      - uses: actions/cache@v5
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
 
       - run: pnpm build
 
@@ -113,33 +142,72 @@ jobs:
           fi
           exit $EXIT_CODE
 
-  publish-github-registry:
-    name: Publish to GitHub Packages
+      # MCP Registry publishing — generates server.json from the
+      # already-bumped package.json, then publishes to the registry.
+      # Ref: https://modelcontextprotocol.io/registry/github-actions
+      - name: Generate server.json
+        if: steps.detect-release.outputs.released == 'true'
+        run: pnpm generate:server-json
+
+      - name: Install mcp-publisher
+        if: steps.detect-release.outputs.released == 'true'
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+
+      - name: Publish to MCP Registry
+        if: steps.detect-release.outputs.released == 'true'
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
+
+  publish-aliases:
+    name: Publish alias — ${{ matrix.name }}
     runs-on: ubuntu-latest
     needs: release
     if: needs.release.outputs.released == 'true'
+    strategy:
+      matrix:
+        include:
+          - name: wayback-machine-mcp
+            registry: https://registry.npmjs.org
+            token: NPM_TOKEN
+            provenance: --provenance
+          - name: mcp-internet-archive
+            registry: https://registry.npmjs.org
+            token: NPM_TOKEN
+            provenance: --provenance
+          - name: internet-archive-mcp
+            registry: https://registry.npmjs.org
+            token: NPM_TOKEN
+            provenance: --provenance
+          - name: "@mearman/mcp-wayback-machine"
+            registry: https://npm.pkg.github.com
+            token: GITHUB_TOKEN
+            provenance: --no-provenance
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: main
+
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
           node-version-file: .tool-versions
-          registry-url: https://npm.pkg.github.com
-
-      - run: corepack enable
+          cache: pnpm
+          registry-url: ${{ matrix.registry }}
 
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm build
 
-      - name: Publish to GitHub Packages
+      - name: Publish
         run: |
-          npm pkg set name=@mearman/mcp-wayback-machine
-          pnpm publish --access public --no-git-checks --no-provenance
+          npm pkg set name=${{ matrix.name }}
+          pnpm publish --access public --no-git-checks ${{ matrix.provenance }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets[matrix.token] }}

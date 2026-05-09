@@ -36,3 +36,4 @@ Thumbs.db
 # Claude
 .claude/
 CLAUDE.md
+server.json

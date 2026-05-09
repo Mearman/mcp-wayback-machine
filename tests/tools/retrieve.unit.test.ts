@@ -1,138 +1,150 @@
-import { describe, it, beforeEach, afterEach } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { getArchivedUrl } from "../../src/tools/retrieve.js";
-import { cachingFetcher } from "../../src/utils/cache.js";
+import { getArchivedUrl } from "../../src/tools/retrieve.ts";
+import { fakeFetch, rejectingFetch, testContext } from "../helpers.ts";
 
-const originalFetch = globalThis.fetch;
+const ARCHIVED_HTML = "<html><body>Archived Content</body></html>";
 
-function jsonResponse(body: string, status = 200): Response {
-	return new Response(body, {
-		status,
-		statusText: status === 200 ? "OK" : "Error",
-	});
+function retrieveContext(responses: Parameters<typeof fakeFetch>[0]) {
+    return testContext(fakeFetch(responses));
 }
 
-beforeEach(async () => {
-	await cachingFetcher.clear();
-});
-
-afterEach(() => {
-	globalThis.fetch = originalFetch;
-});
-
 describe("getArchivedUrl", () => {
-	it("returns archived URL when available", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(
-				jsonResponse(
-					JSON.stringify({
-						url: "https://example.com",
-						archived_snapshots: {
-							closest: {
-								status: "200",
-								available: true,
-								url: "https://web.archive.org/web/20240101120000/https://example.com/",
-								timestamp: "20240101120000",
-							},
-						},
-					}),
-				),
-			);
+    it("returns archived URL and content when available", async () => {
+        const ctx = retrieveContext([
+            {
+                url: "archive.org/wayback/available",
+                body: JSON.stringify({
+                    url: "https://example.com",
+                    archived_snapshots: {
+                        closest: {
+                            status: "200",
+                            available: true,
+                            url: "https://web.archive.org/web/20240101120000/https://example.com/",
+                            timestamp: "20240101120000",
+                        },
+                    },
+                }),
+            },
+            {
+                url: "web.archive.org/web/20240101120000id_",
+                body: ARCHIVED_HTML,
+            },
+        ]);
+        const result = await getArchivedUrl(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		const result = await getArchivedUrl({ url: "https://example.com" });
+        assert.equal(result.success, true);
+        assert.equal(
+            result.archivedUrl,
+            "https://web.archive.org/web/20240101120000id_/https://example.com"
+        );
+        assert.equal(result.timestamp, "20240101120000");
+        assert.equal(result.content, ARCHIVED_HTML);
+    });
 
-		assert.equal(result.success, true);
-		assert.equal(result.available, true);
-		assert.equal(result.timestamp, "20240101120000");
-		assert.equal(
-			result.archivedUrl,
-			"https://web.archive.org/web/20240101120000/https://example.com/",
-		);
-	});
+    it("returns not found when no snapshots", async () => {
+        const ctx = retrieveContext([
+            {
+                url: "archive.org/wayback/available",
+                body: JSON.stringify({
+                    url: "https://example.com",
+                    archived_snapshots: {
+                        closest: {
+                            status: "404",
+                            available: false,
+                            url: "",
+                            timestamp: "",
+                        },
+                    },
+                }),
+            },
+        ]);
+        const result = await getArchivedUrl(
+            { url: "https://example.com" },
+            ctx
+        );
 
-	it("returns not found when no snapshots", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(
-				jsonResponse(
-					JSON.stringify({
-						url: "https://example.com",
-						archived_snapshots: {},
-					}),
-				),
-			);
+        assert.equal(result.success, false);
+        assert.match(result.message, /No archived versions found/);
+    });
 
-		const result = await getArchivedUrl({ url: "https://example.com" });
+    it("constructs direct URL for specific timestamp and fetches content", async () => {
+        const ctx = retrieveContext([
+            {
+                url: "archive.org/wayback/available",
+                body: JSON.stringify({
+                    url: "https://example.com",
+                    archived_snapshots: {},
+                }),
+            },
+            {
+                url: "web.archive.org/web/20240101120000id_",
+                body: ARCHIVED_HTML,
+            },
+        ]);
+        const result = await getArchivedUrl(
+            { url: "https://example.com", timestamp: "20240101120000" },
+            ctx
+        );
 
-		assert.equal(result.success, false);
-		assert.equal(result.available, false);
-	});
+        assert.equal(result.success, true);
+        assert.equal(result.content, ARCHIVED_HTML);
+        assert.equal(result.timestamp, "20240101120000");
+    });
 
-	it("constructs direct URL for specific timestamp", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(
-				jsonResponse(
-					JSON.stringify({
-						url: "https://example.com",
-						archived_snapshots: {},
-					}),
-				),
-			);
+    it("handles 'latest' timestamp without direct construction", async () => {
+        const ctx = retrieveContext([
+            {
+                url: "archive.org/wayback/available",
+                body: JSON.stringify({
+                    url: "https://example.com",
+                    archived_snapshots: {},
+                }),
+            },
+        ]);
+        const result = await getArchivedUrl(
+            { url: "https://example.com", timestamp: "latest" },
+            ctx
+        );
 
-		const result = await getArchivedUrl({
-			url: "https://example.com",
-			timestamp: "20240101120000",
-		});
+        assert.equal(result.success, false);
+    });
 
-		assert.equal(result.success, true);
-		assert.equal(result.available, false);
-		assert.equal(
-			result.archivedUrl,
-			"https://web.archive.org/web/20240101120000/https://example.com/",
-		);
-	});
+    it("handles HTTP errors", async () => {
+        const ctx = retrieveContext([
+            {
+                url: "archive.org/wayback/available",
+                status: 500,
+                body: "Internal Server Error",
+            },
+        ]);
+        const result = await getArchivedUrl(
+            { url: "https://example.com" },
+            ctx
+        );
 
-	it("handles 'latest' timestamp without direct construction", async () => {
-		globalThis.fetch = () =>
-			Promise.resolve(
-				jsonResponse(
-					JSON.stringify({
-						url: "https://example.com",
-						archived_snapshots: {},
-					}),
-				),
-			);
+        assert.equal(result.success, false);
+        assert.match(result.message, /Failed to retrieve/);
+    });
 
-		const result = await getArchivedUrl({
-			url: "https://example.com",
-			timestamp: "latest",
-		});
+    it("handles network errors", async () => {
+        const ctx = testContext(rejectingFetch("connection refused"));
+        const result = await getArchivedUrl(
+            { url: "https://example.com" },
+            ctx
+        );
 
-		assert.equal(result.success, false);
-		assert.equal(result.archivedUrl, undefined);
-	});
+        assert.equal(result.success, false);
+        assert.match(result.message, /connection refused/);
+    });
 
-	it("handles HTTP errors", async () => {
-		globalThis.fetch = () => Promise.resolve(jsonResponse("error", 500));
+    it("rejects invalid URLs", async () => {
+        const ctx = retrieveContext([]);
+        const result = await getArchivedUrl({ url: "not-a-url" }, ctx);
 
-		const result = await getArchivedUrl({ url: "https://example.com" });
-
-		assert.equal(result.success, false);
-		assert.match(result.message, /Failed to retrieve/);
-	});
-
-	it("handles network errors", async () => {
-		globalThis.fetch = () =>
-			Promise.reject(new Error("connection refused"));
-
-		const result = await getArchivedUrl({ url: "https://example.com" });
-
-		assert.equal(result.success, false);
-		assert.match(result.message, /connection refused/);
-	});
-
-	it("rejects invalid URLs", async () => {
-		const result = await getArchivedUrl({ url: "not-a-url" });
-
-		assert.equal(result.success, false);
-	});
+        assert.equal(result.success, false);
+    });
 });
