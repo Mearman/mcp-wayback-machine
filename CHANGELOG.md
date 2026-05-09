@@ -1,3 +1,9 @@
+## [3.0.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.0.1...v3.0.2) (2026-05-09)
+
+### Bug Fixes
+
+* correct dependabot group applies-to to dependency-type ([7c4926e](https://github.com/Mearman/mcp-wayback-machine/commit/7c4926efbcefa73626bd5f7fcc154f5edcc16fd2))
+
 ## [3.0.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.0.0...v3.0.1) (2026-05-09)
 
 ### Chores
