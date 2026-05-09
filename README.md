@@ -79,6 +79,30 @@ npm install -g mcp-wayback-machine
 wayback save https://example.com
 ```
 
+## Quick examples
+
+What to ask the agent:
+
+```
+Archive https://example.com to the Wayback Machine
+```
+
+```
+Find all archived snapshots of https://example.com from 2023
+```
+
+```
+What's the earliest archived version of https://example.com?
+```
+
+```
+Compare the oldest and newest snapshots of https://example.com
+```
+
+```
+Check how many times https://example.com has been archived
+```
+
 ## Tools
 
 ### `save_url`
