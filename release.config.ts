@@ -45,9 +45,20 @@ const config: GlobalConfig = {
         "@semantic-release/changelog",
         "@semantic-release/npm",
         [
+            "@semantic-release/exec",
+            {
+                prepareCmd: "node scripts/sync-plugin-version.ts",
+            },
+        ],
+        [
             "@semantic-release/git",
             {
-                assets: ["package.json", "pnpm-lock.yaml", "CHANGELOG.md"],
+                assets: [
+                    "package.json",
+                    "pnpm-lock.yaml",
+                    "CHANGELOG.md",
+                    ".claude-plugin/plugin.json",
+                ],
                 message:
                     "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}",
             },
