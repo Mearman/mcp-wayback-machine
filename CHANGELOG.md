@@ -1,3 +1,15 @@
+## [3.5.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.5.0...v3.5.1) (2026-05-10)
+
+### Bug Fixes
+
+* align release workflow with pi-perms pattern ([a49b31a](https://github.com/Mearman/mcp-wayback-machine/commit/a49b31a8669048fd86823eeb4083274dccac15f6))
+* make E2E tests tolerant of Wayback Machine rate limits ([fdcc4d3](https://github.com/Mearman/mcp-wayback-machine/commit/fdcc4d3b04db061c5bcda1f0160cd3f37f3685c7))
+* retry HTTP 498 rate limits and improve E2E test resilience ([a888d30](https://github.com/Mearman/mcp-wayback-machine/commit/a888d30a1b2634138cfb1d7e516d3d7208207107))
+
+### CI
+
+* add coverage and untested-files check to CI ([1302a30](https://github.com/Mearman/mcp-wayback-machine/commit/1302a30ae2713c800cf8ffb8894a0c38945150cc))
+
 ## [3.5.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.4.0...v3.5.0) (2026-05-10)
 
 ### Features
