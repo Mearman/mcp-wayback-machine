@@ -22,6 +22,11 @@
             "dependsOn": ["_typecheck"],
             "inputs": ["src/**/*.ts", "tests/**/*.ts"]
         },
+        "_test:untested": {
+            "dependsOn": ["_typecheck"],
+            "inputs": ["src/**/*.ts", "scripts/untested-files.ts"],
+            "cache": false
+        },
         "_test:e2e": {
             "dependsOn": ["_typecheck"],
             "inputs": ["src/**/*.ts", "tests/e2e.test.ts"],
@@ -36,7 +41,7 @@
             "dependsOn": ["_typecheck", "_lint", "_build"]
         },
         "_validate": {
-            "dependsOn": ["_check", "_test"]
+            "dependsOn": ["_check", "_test", "_test:untested"]
         }
     }
 }
