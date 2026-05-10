@@ -1,3 +1,9 @@
+## [3.4.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.3.2...v3.4.0) (2026-05-10)
+
+### Features
+
+* add integration and E2E test suites, extract server factory for DI ([69030a5](https://github.com/Mearman/mcp-wayback-machine/commit/69030a5047a87e814a6c6abff2ed8fed1690b3df))
+
 ## [3.3.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.3.1...v3.3.2) (2026-05-09)
 
 ### Documentation
