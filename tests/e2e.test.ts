@@ -4,11 +4,16 @@
  * Gated behind WAYBACK_LIVE_TESTS=1 to avoid hitting rate limits in CI.
  * Run manually: WAYBACK_LIVE_TESTS=1 pnpm test:e2e
  *
+ * These tests are inherently flaky due to the Wayback Machine's
+ * aggressive rate limits (HTTP 498). The 5-second delay between
+ * tests mitigates this but cannot eliminate it. If a test fails
+ * with a rate-limit or timeout error, re-run after a few minutes.
+ *
  * Uses well-known URLs that are guaranteed to be archived (e.g. example.com).
  * Does NOT test save_url (destructive, requires auth).
  */
 
-import { describe, it, before, after } from "node:test";
+import { describe, it, before, after, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -65,6 +70,12 @@ describe("E2E — live Wayback Machine API", { skip }, () => {
         await close();
     });
 
+    // Pause between tests to avoid triggering the Wayback Machine's
+    // server-side rate limits (HTTP 498 / CDX stalls).
+    beforeEach(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+    });
+
     describe("tools/list", () => {
         it("returns all seven tools", async () => {
             const { tools } = await client.listTools();
@@ -73,32 +84,48 @@ describe("E2E — live Wayback Machine API", { skip }, () => {
     });
 
     describe("search_archives", () => {
-        it("returns real archived snapshots for a well-known URL", async () => {
-            const result = await callTool("search_archives", {
-                url: ARCHIVED_URL,
-                limit: 5,
-            });
+        it(
+            "returns real archived snapshots for a well-known URL",
+            { timeout: 60_000 },
+            async () => {
+                const result = await callTool("search_archives", {
+                    url: ARCHIVED_URL,
+                    limit: 5,
+                });
 
-            assert.equal(result.isError, undefined);
-            const text = textContent(result);
-            assert.match(text, /Found \d+ archived versions/);
-            assert.match(text, /Date:/);
-            assert.match(text, /Status:/);
-        });
+                assert.equal(
+                    result.isError,
+                    undefined,
+                    `Unexpected error: ${textContent(result)}`
+                );
+                const text = textContent(result);
+                assert.match(text, /Found \d+ archived versions/);
+                assert.match(text, /Date:/);
+                assert.match(text, /Status:/);
+            }
+        );
     });
 
     describe("get_archived_url", () => {
-        it("retrieves a real archived snapshot", async () => {
-            const result = await callTool("get_archived_url", {
-                url: ARCHIVED_URL,
-                timestamp: "latest",
-            });
+        it(
+            "retrieves a real archived snapshot",
+            { timeout: 60_000 },
+            async () => {
+                const result = await callTool("get_archived_url", {
+                    url: ARCHIVED_URL,
+                    timestamp: "latest",
+                });
 
-            assert.equal(result.isError, undefined);
-            const text = textContent(result);
-            assert.match(text, /Found archived version/);
-            assert.match(text, /Available: Yes/);
-        });
+                assert.equal(
+                    result.isError,
+                    undefined,
+                    `Unexpected error: ${textContent(result)}`
+                );
+                const text = textContent(result);
+                assert.match(text, /Found archived version/);
+                assert.match(text, /Available: Yes/);
+            }
+        );
     });
 
     describe("check_archive_status", () => {
@@ -107,7 +134,11 @@ describe("E2E — live Wayback Machine API", { skip }, () => {
                 url: ARCHIVED_URL,
             });
 
-            assert.equal(result.isError, undefined);
+            assert.equal(
+                result.isError,
+                undefined,
+                `Unexpected error: ${textContent(result)}`
+            );
             const text = textContent(result);
             assert.match(text, /Archive status/);
             assert.match(text, /Total captures/);
@@ -115,19 +146,24 @@ describe("E2E — live Wayback Machine API", { skip }, () => {
     });
 
     describe("list_screenshots", () => {
-        it("returns screenshot results (or empty) for a well-known URL", async () => {
-            const result = await callTool("list_screenshots", {
-                url: ARCHIVED_URL,
-                limit: 5,
-            });
+        it(
+            "returns screenshot results (or empty) for a well-known URL",
+            { timeout: 60_000 },
+            async () => {
+                const result = await callTool("list_screenshots", {
+                    url: ARCHIVED_URL,
+                    limit: 5,
+                });
 
-            assert.equal(result.isError, undefined);
-            const text = textContent(result);
-            assert.ok(
-                text.includes("No screenshots found") || text.includes("Found"),
-                "returns a valid response"
-            );
-        });
+                assert.equal(result.isError, undefined);
+                const text = textContent(result);
+                assert.ok(
+                    text.includes("No screenshots found") ||
+                        text.includes("Found"),
+                    "returns a valid response"
+                );
+            }
+        );
     });
 
     describe("compare_snapshots", () => {
@@ -162,7 +198,11 @@ describe("E2E — live Wayback Machine API", { skip }, () => {
                 url: "https://this-domain-does-not-exist-zzz.example.com",
             });
 
-            assert.equal(result.isError, undefined);
+            assert.equal(
+                result.isError,
+                undefined,
+                `Unexpected error: ${textContent(result)}`
+            );
             const text = textContent(result);
             assert.match(text, /not been archived/);
         });

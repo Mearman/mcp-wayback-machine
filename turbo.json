@@ -1,5 +1,6 @@
 {
     "$schema": "https://turbo.build/schema.json",
+    "globalPassThroughEnv": ["WAYBACK_LIVE_TESTS"],
     "tasks": {
         "_typecheck": {
             "inputs": ["src/**/*.ts", "tests/**/*.ts", "tsconfig.json"],

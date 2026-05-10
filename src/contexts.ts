@@ -70,7 +70,11 @@ async function fetchWithRetryAfter(
     try {
         return await cachingFetcher.fetch(url, options);
     } catch (error) {
-        if (error instanceof HttpError && error.status === 429 && attempt < 3) {
+        if (
+            error instanceof HttpError &&
+            (error.status === 429 || error.status === 498) &&
+            attempt < 3
+        ) {
             const retryHeader = error.response;
             // Parse Retry-After from the response or default to 5s
             const retryAfter = parseRetryAfter(retryHeader) ?? 5000;
