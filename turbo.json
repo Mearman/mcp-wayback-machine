@@ -22,6 +22,11 @@
             "dependsOn": ["_typecheck"],
             "inputs": ["src/**/*.ts", "tests/**/*.ts"]
         },
+        "_test:e2e": {
+            "dependsOn": ["_typecheck"],
+            "inputs": ["src/**/*.ts", "tests/e2e.test.ts"],
+            "cache": false
+        },
         "_build": {
             "dependsOn": ["_typecheck", "_lint"],
             "inputs": ["src/**/*.ts", "tsconfig.json", "package.json"],
