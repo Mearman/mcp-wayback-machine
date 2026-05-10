@@ -1,3 +1,13 @@
+## [3.5.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.4.0...v3.5.0) (2026-05-10)
+
+### Features
+
+* add untested-files check and production wiring tests ([e53495a](https://github.com/Mearman/mcp-wayback-machine/commit/e53495af8a7579a71ea9d4d7277a27ffdf86268d))
+
+### Bug Fixes
+
+* exclude wiring files from coverage thresholds ([10ab442](https://github.com/Mearman/mcp-wayback-machine/commit/10ab4427dda1c515832b3966e3186f68291b99de))
+
 ## [3.4.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.3.2...v3.4.0) (2026-05-10)
 
 ### Features
