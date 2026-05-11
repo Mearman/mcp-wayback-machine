@@ -1,3 +1,9 @@
+## [3.5.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.5.1...v3.5.2) (2026-05-11)
+
+### Build
+
+* **deps:** bump the dev-dependencies group with 2 updates ([9776d3b](https://github.com/Mearman/mcp-wayback-machine/commit/9776d3ba6dc90363d534c6d82281f75e3d27fc72))
+
 ## [3.5.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.5.0...v3.5.1) (2026-05-10)
 
 ### Bug Fixes
