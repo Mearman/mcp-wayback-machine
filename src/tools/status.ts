@@ -4,11 +4,12 @@
 import * as z from "zod";
 import { AvailabilityResponse, SparklineResponse } from "../schemas.ts";
 import { HttpError } from "../utils/http.ts";
+import { HttpUrl } from "../utils/validation.ts";
 
 import type { ToolContext } from "./context.ts";
 
 export const CheckArchiveStatus = z.object({
-    url: z.url().meta({ description: "The URL to check archival status for" }),
+    url: HttpUrl.meta({ description: "The URL to check archival status for" }),
 });
 
 export type CheckArchiveStatus = z.output<typeof CheckArchiveStatus>;

@@ -6,13 +6,14 @@
 import * as z from "zod";
 import { SaveJobResponse } from "../schemas.ts";
 import { HttpError } from "../utils/http.ts";
+import { HttpUrl } from "../utils/validation.ts";
 
 import type { ToolContext } from "./context.ts";
 
 export const SaveUrl = z.object({
-    url: z
-        .url()
-        .meta({ description: "The URL to save to the Wayback Machine" }),
+    url: HttpUrl.meta({
+        description: "The URL to save to the Wayback Machine",
+    }),
     captureScreenshot: z.boolean().optional().meta({
         description:
             "Capture a screenshot of the page as a PNG image (uses the im_ modifier)",

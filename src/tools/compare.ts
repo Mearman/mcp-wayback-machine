@@ -1,21 +1,25 @@
 /**
- * Compare tool — diffs two archived snapshots using Wayback Changes.
+ * Compare tool ΓÇö diffs two archived snapshots using Wayback Changes.
  * Fetches raw content of both snapshots and provides a visual diff URL.
  */
 
 import * as z from "zod";
 import { CdxResponse } from "../schemas.ts";
 import { HttpError } from "../utils/http.ts";
-import { formatTimestamp } from "../utils/validation.ts";
+import {
+    HttpUrl,
+    Timestamp,
+    formatTimestamp,
+} from "../utils/validation.ts";
 import type { ToolContext } from "./context.ts";
 
 export const CompareSnapshots = z.object({
-    url: z.url().meta({ description: "The URL to compare snapshots for" }),
-    timestampA: z.string().trim().optional().meta({
+    url: HttpUrl.meta({ description: "The URL to compare snapshots for" }),
+    timestampA: Timestamp.optional().meta({
         description:
             "First timestamp (YYYYMMDDhhmmss). Defaults to oldest available.",
     }),
-    timestampB: z.string().trim().optional().meta({
+    timestampB: Timestamp.optional().meta({
         description:
             "Second timestamp (YYYYMMDDhhmmss). Defaults to newest available.",
     }),
@@ -51,7 +55,9 @@ export async function compareSnapshots(
     const { url, timestampA, timestampB } = input;
 
     try {
-        // If both timestamps provided, fetch both snapshots directly
+        // If both timestamps provided, fetch both snapshots directly.
+        // Both values have been validated against the Timestamp schema
+        // (14 digits) so they can be safely interpolated into the URL path.
         if (timestampA !== undefined && timestampB !== undefined) {
             const snapshotAUrl = `https://web.archive.org/web/${timestampA}id_/${url}`;
             const snapshotBUrl = `https://web.archive.org/web/${timestampB}id_/${url}`;

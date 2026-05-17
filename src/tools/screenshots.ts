@@ -4,11 +4,11 @@
 import * as z from "zod";
 import { CdxResponse } from "../schemas.ts";
 import { HttpError } from "../utils/http.ts";
-import { formatTimestamp } from "../utils/validation.ts";
+import { HttpUrl, formatTimestamp } from "../utils/validation.ts";
 import type { ToolContext } from "./context.ts";
 
 export const ListScreenshots = z.object({
-    url: z.url().meta({ description: "The URL to find screenshots for" }),
+    url: HttpUrl.meta({ description: "The URL to find screenshots for" }),
     limit: z
         .int()
         .min(1)

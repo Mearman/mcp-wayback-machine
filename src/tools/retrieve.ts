@@ -1,22 +1,26 @@
 /**
- * Retrieve tool — resolves archived URLs and fetches snapshot content.
+ * Retrieve tool ΓÇö resolves archived URLs and fetches snapshot content.
  * Supports URL modifiers (id_, im_, js_, cs_) for different content views.
  */
 
 import * as z from "zod";
 import { AvailabilityResponse } from "../schemas.ts";
 import { HttpError } from "../utils/http.ts";
+import { HttpUrl, Timestamp } from "../utils/validation.ts";
 
 import type { ToolContext } from "./context.ts";
 
 export const GetArchivedUrl = z.object({
-    url: z
-        .url()
-        .meta({ description: "The URL to retrieve from the Wayback Machine" }),
-    timestamp: z.string().trim().optional().meta({
-        description:
-            'Specific timestamp (YYYYMMDDhhmmss) or "latest" for most recent',
+    url: HttpUrl.meta({
+        description: "The URL to retrieve from the Wayback Machine",
     }),
+    timestamp: z
+        .union([z.literal("latest"), Timestamp])
+        .optional()
+        .meta({
+            description:
+                'Specific timestamp (YYYYMMDDhhmmss) or "latest" for most recent',
+        }),
     modifier: z.enum(["id_", "im_", "js_", "cs_"]).optional().meta({
         description:
             "URL modifier: id_ (raw content, no toolbar), im_ (screenshot image), js_ (JavaScript), cs_ (CSS). Default: id_",
@@ -62,7 +66,9 @@ export async function getArchivedUrl(
             const snapshot = data.archived_snapshots.closest;
             const mod = modifier ?? "id_";
 
-            // Reconstruct the archived URL with the requested modifier
+            // Reconstruct the archived URL with the requested modifier.
+            // `ts` comes from the Wayback availability API (server-controlled,
+            // 14-digit string); `url` was validated by HttpUrl.
             const ts = snapshot.timestamp;
             const snapshotUrl = `https://web.archive.org/web/${ts}${mod}/${url}`;
 
@@ -83,7 +89,9 @@ export async function getArchivedUrl(
             };
         }
 
-        // If no snapshot found, try direct construction for specific timestamps
+        // If no snapshot found, try direct construction for specific timestamps.
+        // `timestamp` here has been validated by the Timestamp schema (14 digits)
+        // so it can't inject extra path segments into the URL.
         if (timestamp !== undefined && timestamp !== "latest") {
             const mod = modifier ?? "id_";
             const directUrl = `https://web.archive.org/web/${timestamp}${mod}/${url}/`;

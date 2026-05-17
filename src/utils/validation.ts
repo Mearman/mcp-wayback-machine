@@ -13,6 +13,16 @@ export const Timestamp = z
     .regex(/^\d{14}$/, "Timestamp must be in YYYYMMDDhhmmss format");
 
 /**
+ * Validates an http(s) URL. Rejects javascript:, file:, data:, ftp:, etc.
+ */
+export const HttpUrl = z
+    .url()
+    .refine(
+        (u) => /^https?:\/\//i.test(u),
+        "URL must use http or https scheme"
+    );
+
+/**
  * Format a YYYYMMDDHHmmss timestamp to human-readable form.
  * Returns the input unchanged if it's not 14 characters.
  */

@@ -6,11 +6,11 @@
 import * as z from "zod";
 import { CdxResponse } from "../schemas.ts";
 import { HttpError } from "../utils/http.ts";
-import { formatTimestamp } from "../utils/validation.ts";
+import { HttpUrl, formatTimestamp } from "../utils/validation.ts";
 import type { ToolContext } from "./context.ts";
 
 export const SearchArchives = z.object({
-    url: z.url().meta({ description: "The URL pattern to search for" }),
+    url: HttpUrl.meta({ description: "The URL pattern to search for" }),
     matchType: z.enum(["exact", "prefix", "host", "domain"]).optional().meta({
         description:
             "URL match scope: exact (default), prefix (all under path), host, or domain (with subdomains)",
