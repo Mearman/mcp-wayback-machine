@@ -2,12 +2,16 @@
  * HTTP request caching with both in-memory and disk backends.
  * Stores serialised responses (status, headers, body) with TTL-based expiry.
  * Supports per-endpoint TTL via URL pattern matching.
+ *
+ * Disk cache lives under the user's cache directory (XDG_CACHE_HOME or
+ * ~/.cache on Linux/macOS, %LOCALAPPDATA% on Windows) with 0700 / 0600
+ * permissions so it cannot be poisoned by other users on a shared host.
  */
 
 import { createHash } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { homedir } from "node:os";
 import * as z from "zod";
 import { fetchWithTimeout } from "./http.ts";
 
@@ -64,9 +68,26 @@ interface CacheConfig {
     diskDir: string;
 }
 
+/**
+ * Default cache directory — per-user, not a shared world-readable tmp path.
+ * Honours $XDG_CACHE_HOME on Linux when set; falls back to ~/.cache otherwise.
+ * On Windows, %LOCALAPPDATA% is preferred when present.
+ */
+function defaultCacheDir(): string {
+    const xdg = process.env.XDG_CACHE_HOME;
+    if (xdg !== undefined && xdg !== "") {
+        return join(xdg, "mcp-wayback-machine");
+    }
+    const localAppData = process.env.LOCALAPPDATA;
+    if (localAppData !== undefined && localAppData !== "") {
+        return join(localAppData, "mcp-wayback-machine", "cache");
+    }
+    return join(homedir(), ".cache", "mcp-wayback-machine");
+}
+
 const DEFAULT_CONFIG: CacheConfig = {
     ttl: TTL.AVAILABILITY,
-    diskDir: join(tmpdir(), "mcp-wayback-machine-cache"),
+    diskDir: defaultCacheDir(),
 };
 
 /**
@@ -248,9 +269,12 @@ export class CachingFetcher {
 
     private async writeDisk(key: string, entry: CachedResponse): Promise<void> {
         try {
-            await mkdir(this.config.diskDir, { recursive: true });
+            await mkdir(this.config.diskDir, { recursive: true, mode: 0o700 });
             const filePath = join(this.config.diskDir, `${key}.json`);
-            await writeFile(filePath, JSON.stringify(entry), "utf-8");
+            await writeFile(filePath, JSON.stringify(entry), {
+                encoding: "utf-8",
+                mode: 0o600,
+            });
         } catch {
             // Disk cache write failure is non-fatal
         }
