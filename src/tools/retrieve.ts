@@ -6,7 +6,7 @@
 import * as z from "zod";
 import { AvailabilityResponse } from "../schemas.ts";
 import { HttpError } from "../utils/http.ts";
-import { HttpUrl, Timestamp } from "../utils/validation.ts";
+import { capContent, HttpUrl, Timestamp } from "../utils/validation.ts";
 
 import type { ToolContext } from "./context.ts";
 
@@ -84,7 +84,7 @@ export async function getArchivedUrl(
                 archivedUrl: snapshotUrl,
                 timestamp: ts,
                 available: true,
-                content: body,
+                content: capContent(body),
                 contentType,
             };
         }
@@ -109,7 +109,7 @@ export async function getArchivedUrl(
                     archivedUrl: directUrl,
                     timestamp,
                     available: false,
-                    content: body,
+                    content: capContent(body),
                     contentType,
                 };
             } catch {

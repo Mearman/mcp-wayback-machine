@@ -13,6 +13,7 @@ export const Timestamp = z
     .regex(/^\d{14}$/, "Timestamp must be in YYYYMMDDhhmmss format");
 
 /**
+/**
  * Validates an http(s) URL. Rejects javascript:, file:, data:, ftp:, etc.
  */
 export const HttpUrl = z
@@ -21,6 +22,24 @@ export const HttpUrl = z
         (u) => /^https?:\/\//i.test(u),
         "URL must use http or https scheme"
     );
+
+/**
+ * Maximum bytes of archived snapshot content to return to the LLM.
+ * Caps memory use and token blowup; large snapshots are truncated with a
+ * clearly visible marker.
+ */
+export const MAX_SNAPSHOT_BYTES = 200_000;
+
+/**
+ * Truncate a snapshot body to MAX_SNAPSHOT_BYTES with a clear marker.
+ */
+export function capContent(body: string): string {
+    if (body.length <= MAX_SNAPSHOT_BYTES) {
+        return body;
+    }
+    return `${body.slice(0, MAX_SNAPSHOT_BYTES)}
+... [truncated: snapshot exceeded ${String(MAX_SNAPSHOT_BYTES)} bytes]`;
+}
 
 /**
  * Format a YYYYMMDDHHmmss timestamp to human-readable form.

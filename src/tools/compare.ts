@@ -7,9 +7,10 @@ import * as z from "zod";
 import { CdxResponse } from "../schemas.ts";
 import { HttpError } from "../utils/http.ts";
 import {
+    capContent,
+    formatTimestamp,
     HttpUrl,
     Timestamp,
-    formatTimestamp,
 } from "../utils/validation.ts";
 import type { ToolContext } from "./context.ts";
 
@@ -86,8 +87,8 @@ export async function compareSnapshots(
                     url: snapshotBUrl,
                 },
                 changesUrl: `https://web.archive.org/web/changes/${encodeURIComponent(url)}`,
-                contentA,
-                contentB,
+                contentA: capContent(contentA),
+                contentB: capContent(contentB),
             };
         }
 
