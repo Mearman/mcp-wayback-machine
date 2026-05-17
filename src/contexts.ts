@@ -141,8 +141,10 @@ function parseRetryAfter(value: string | undefined): number | undefined {
  */
 export const context: ToolContext = {
     async fetch(url, options) {
-        await waybackRateLimiter.waitForSlot();
-        waybackRateLimiter.recordRequest();
+        // Atomic acquire (waitForSlot + recordRequest) keeps concurrent
+        // callers under the configured limit by eliminating the check-then-act
+        // window between the two original calls.
+        await waybackRateLimiter.acquire();
 
         const headers = buildHeaders(url, options?.headers);
 

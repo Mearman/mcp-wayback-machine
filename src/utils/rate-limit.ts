@@ -55,6 +55,24 @@ export class RateLimiter {
     }
 
     /**
+     * Atomically wait for a slot and reserve it. Prevents the check-then-act
+     * race where multiple concurrent callers can each see canMakeRequest()
+     * return true and then collectively exceed the limit.
+     */
+    async acquire(): Promise<void> {
+        while (true) {
+            await this.waitForSlot();
+            // Synchronous: cleanup + length check + push happens with no awaits
+            // in between, so the limit cannot be breached between callers.
+            this.cleanup();
+            if (this.requests.length < this.maxRequests) {
+                this.recordRequest();
+                return;
+            }
+        }
+    }
+
+    /**
 
      * * Remove expired requests from the tracking array
 
