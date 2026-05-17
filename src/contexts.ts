@@ -44,12 +44,39 @@ function buildHeaders(
         ...overrides,
     };
 
-    // Inject S3 auth on save endpoints for higher SPN2 rate limits
-    if (credentials !== undefined && url.includes("web.archive.org/save")) {
+    // Inject S3 auth on the SPN2 save endpoint for higher rate limits.
+    // The URL is parsed and matched on host + pathname rather than substring
+    // so the helper match is robust to query/fragment formatting and unusual
+    // inputs.
+    if (credentials !== undefined && isWaybackSaveUrl(url)) {
         headers.Authorization = `LOW ${credentials.accessKey}:${credentials.secretKey}`;
     }
 
     return headers;
+}
+
+
+/**
+ * Strict check: is this URL a request to the web.archive.org /save endpoint?
+ * Uses URL parsing instead of substring matching so the predicate is robust
+ * to query/fragment formatting and unusual inputs.
+ */
+function isWaybackSaveUrl(url: string): boolean {
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        return false;
+    }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        return false;
+    }
+    if (parsed.hostname !== "web.archive.org") {
+        return false;
+    }
+    return (
+        parsed.pathname === "/save" || parsed.pathname.startsWith("/save/")
+    );
 }
 
 /**
