@@ -74,7 +74,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.29.0",
     "commander": "14.0.3",
-    "zod": "4.4.2"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@commitlint/cli": "20.5.3",
