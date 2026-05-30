@@ -2,7 +2,7 @@ import eslint from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import type { Rule } from "eslint";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
-import eslintPluginPrettier from "eslint-plugin-prettier";
+
 import eslintPluginZod from "eslint-plugin-zod";
 import { configs } from "typescript-eslint";
 
@@ -122,12 +122,11 @@ const sharedPluginRules = {
             "no-pointless-reassignments": noPointlessReassignments,
         },
     },
-    prettier: eslintPluginPrettier,
 };
 
 const sharedRules = {
     "custom/no-pointless-reassignments": "error",
-    "prettier/prettier": "error",
+
     "@typescript-eslint/consistent-type-assertions": [
         "error",
         { assertionStyle: "never" },

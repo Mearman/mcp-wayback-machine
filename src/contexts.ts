@@ -55,7 +55,6 @@ function buildHeaders(
     return headers;
 }
 
-
 /**
  * Strict check: is this URL a request to the web.archive.org /save endpoint?
  * Uses URL parsing instead of substring matching so the predicate is robust
@@ -74,9 +73,7 @@ function isWaybackSaveUrl(url: string): boolean {
     if (parsed.hostname !== "web.archive.org") {
         return false;
     }
-    return (
-        parsed.pathname === "/save" || parsed.pathname.startsWith("/save/")
-    );
+    return parsed.pathname === "/save" || parsed.pathname.startsWith("/save/");
 }
 
 /**
