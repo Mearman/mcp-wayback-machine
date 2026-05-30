@@ -4,15 +4,122 @@
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Mearman/mcp-wayback-machine/ci.yml?branch=main)](https://github.com/Mearman/mcp-wayback-machine/actions)
 
-An MCP (Model Context Protocol) server and CLI tool for interacting with the Internet Archive's Wayback Machine. Supports full CDX search, snapshot content retrieval, screenshot listing, snapshot comparison, and optional authentication for higher SPN2 rate limits.
+> MCP server and CLI tool for interacting with the Internet Archive's Wayback Machine. Supports full CDX search, snapshot content retrieval, screenshot listing, snapshot comparison, and optional authentication for higher SPN2 rate limits.
+
+**Stack:** TypeScript · Node.js 22+ · ES Modules · pnpm · Turbo · Zod
+
+## Getting started
+
+Requires Node.js 22+ and [pnpm](https://pnpm.io).
+
+```bash
+pnpm install
+```
+
+Optional credentials (anonymous access works, but authenticated requests get higher SPN2 rate limits):
+
+```bash
+export WAYBACK_ACCESS_KEY="your-access-key"
+export WAYBACK_SECRET_KEY="your-secret-key"
+```
+
+Obtain credentials at [archive.org/account/s3.php](https://archive.org/account/s3.php).
+
+## Build, test, and lint
+
+```bash
+pnpm validate          # typecheck + lint + build + test + untested-files check (the full CI gate)
+pnpm check             # typecheck + lint + build only
+pnpm build             # compile TypeScript to dist/
+pnpm test              # run unit and integration tests
+pnpm test:coverage     # run tests with coverage (80% line/branch/function threshold)
+pnpm lint              # lint with ESLint
+pnpm lint:fix          # auto-fix lint issues
+```
+
+To run a single test file:
+
+```bash
+node --test tests/tools/save.unit.test.ts
+```
+
+End-to-end tests hit the live Wayback Machine API and are opt-in:
+
+```bash
+pnpm test:e2e          # sets WAYBACK_LIVE_TESTS=1 internally via turbo
+```
+
+`pnpm validate` is the gate that must pass before a release. `prepublishOnly` runs it automatically.
+
+## Architecture
+
+`src/bin.ts` is the entry point. It detects whether it is invoked as a CLI or loaded as an MCP server and routes accordingly.
+
+```
+src/
+  bin.ts          — entry point; dispatches to CLI or MCP server
+  cli.ts          — Commander-based CLI implementation
+  server.ts       — MCP server wiring (ListTools + CallTool handlers)
+  contexts.ts     — shared context (rate limiter, cache, credentials)
+  schemas.ts      — Zod schemas for all tool inputs; single source of truth
+  tools/
+    save.ts       — save_url tool (SPN2 API)
+    retrieve.ts   — get_archived_url tool
+    search.ts     — search_archives tool (CDX API)
+    status.ts     — check_archive_status tool (sparkline API)
+    screenshots.ts — list_screenshots tool
+    compare.ts    — compare_snapshots tool
+    cache.ts      — clear_cache tool
+    context.ts    — injects shared context into tool handlers
+  utils/
+    http.ts       — fetch wrapper with rate limiting and Retry-After handling
+    cache.ts      — in-memory + disk cache with per-endpoint TTLs
+    rate-limit.ts — 15 req/min token bucket
+    validation.ts — shared Zod validation helpers
+```
+
+Each tool module exports a schema (consumed by `ListToolsRequestSchema`) and an execution function (consumed by `CallToolRequestSchema`). New tools need both registrations in `server.ts`.
+
+Caching TTLs are intentional — do not normalise them:
+
+| Resource | TTL | Reason |
+|---|---|---|
+| Snapshot content | 24 h | Immutable once captured |
+| Availability, CDX, sparkline | 1 h | Grows but never mutates |
+| Save operations | 30 min | Idempotent per URL |
+| Save status polling | 30 s | Changes during active jobs |
+
+## Conventions
+
+- **TypeScript strict mode** with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` — no `any`, no `as` assertions.
+- **ES Modules throughout** — `"type": "module"` in `package.json`. Always use `.ts` extensions in relative imports (rewritten to `.js` at build time via `rewriteRelativeImportExtensions`).
+- **Zod is the single source of truth** for all tool input shapes. `schemas.ts` defines them; `zodToJsonSchema` derives the MCP-compatible JSON Schema.
+- **Prettier** formats all TypeScript: 4-space indent, double quotes, trailing commas (`es5`), 80-char print width, LF line endings.
+- **Conventional commits** are enforced by commitlint. Allowed scopes: `retrieve`, `save`, `search`, `status`, `fetch`, `http`, `validation`, `cli`, `build`, `release`, `ci`, `deps`. Commit messages must use British English.
+- **Test colocation**: unit tests in `tests/tools/*.unit.test.ts` and `tests/utils/*.unit.test.ts`; integration tests in `tests/*.integration.test.ts`. Use the Node.js built-in test runner — no Jest or Vitest.
+- **`erasableSyntaxOnly: true`** — no TypeScript syntax that cannot be stripped without transformation (no `enum`, no decorators, no `namespace`).
+
+## Gotchas
+
+- **`pnpm validate` before pushing.** CI runs `check + test + coverage + untested-files`. `pnpm validate` replicates this locally via Turbo.
+- **Turbo caches aggressively.** If you change a config file that Turbo doesn't track as an input, cached task results may be stale. Clear with `pnpm turbo run <task> --force` if results look wrong.
+- **`WAYBACK_LIVE_TESTS` must be set** to run `test:e2e`. The Turbo config passes it through via `globalPassThroughEnv`; don't set it in `.env` files — export it in your shell before running.
+- **Coverage excludes** `src/contexts.ts`, `src/cli.ts`, `src/bin.ts`, and `src/tools/context.ts` — these are wiring/entry-point files. The 80% threshold applies to the remaining surface.
+- **Rate limiting is 15 req/min** across all Wayback Machine API calls, with automatic Retry-After handling for 429 responses. Tests that mock HTTP must respect this — don't call real endpoints from unit tests.
+- **`noUncheckedIndexedAccess`** means `Record<string, T>` lookups return `T | undefined`. Never fall back to `?? default` — narrow explicitly or restructure to a concrete type.
+- **Node version** is pinned in `.tool-versions`. CI tests against Node 22, 24, and 26. Do not use Node APIs that aren't available in 22.
+
+## Contributing
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/) and are lint-checked by commitlint on PRs. PRs target `main`; CI must pass (`check`, `test`, `coverage`). Releases are fully automated via semantic-release on push to `main`.
+
+After release, alias packages (`wayback-machine-mcp`, `mcp-internet-archive`, `internet-archive-mcp`, `@mearman/mcp-wayback-machine`) are published automatically by CI — do not publish these manually.
 
 ## Installation
 
 ### As an MCP server
 
 #### CLI shorthand
-
-Some agent harnesses provide a one-command install:
 
 **Claude Code (MCP):**
 
@@ -39,13 +146,9 @@ To include optional credentials:
 claude mcp add wayback-machine --env WAYBACK_ACCESS_KEY=xxx --env WAYBACK_SECRET_KEY=xxx -- npx -y mcp-wayback-machine
 ```
 
-```bash
-codex mcp add wayback-machine --env WAYBACK_ACCESS_KEY=xxx --env WAYBACK_SECRET_KEY=xxx -- npx -y mcp-wayback-machine
-```
-
 #### Manual configuration
 
-For harnesses that use config files, add the following to the appropriate section:
+Add to the appropriate config file:
 
 ```json
 {
@@ -71,7 +174,7 @@ For harnesses that use config files, add the following to the appropriate sectio
 | Zed | `~/.config/zed/settings.json` | `context_servers` |
 | Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` | `mcpServers` |
 
-The `env` block is optional — the server works anonymously without credentials. See [Credentials](#credentials) for details.
+The `env` block is optional — the server works anonymously without credentials.
 
 ### As a CLI tool
 
@@ -88,25 +191,11 @@ wayback save https://example.com
 
 ## Quick examples
 
-What to ask the agent:
-
 ```
 Archive https://example.com to the Wayback Machine
-```
-
-```
 Find all archived snapshots of https://example.com from 2023
-```
-
-```
 What's the earliest archived version of https://example.com?
-```
-
-```
 Compare the oldest and newest snapshots of https://example.com
-```
-
-```
 Check how many times https://example.com has been archived
 ```
 
@@ -216,82 +305,26 @@ Compare two archived snapshots of a URL. Fetches the raw content of both and pro
 
 Clear all cached API responses. Use when fresh data is needed or after saving a new URL.
 
-## Credentials
-
-The server works anonymously by default. Set Internet Archive S3 credentials for higher rate limits on save operations:
-
-```bash
-export WAYBACK_ACCESS_KEY="your-access-key"
-export WAYBACK_SECRET_KEY="your-secret-key"
-```
-
-To obtain credentials, log in to [archive.org](https://archive.org) and visit your [S3 API keys](https://archive.org/account/s3.php) page.
-
-## CLI Usage
+## CLI usage
 
 ```bash
 wayback save https://example.com
-```
-
-```bash
 wayback get https://example.com
-```
-
-```bash
 wayback get https://example.com --timestamp 20231225120000
-```
-
-```bash
 wayback search https://example.com --from 2023-01-01 --to 2023-12-31 --limit 20
-```
-
-```bash
 wayback status https://example.com
-```
-
-```bash
 wayback screenshots https://example.com
-```
-
-```bash
 wayback compare https://example.com
-```
-
-```bash
 wayback compare https://example.com --timestamp-a 20230101000000 --timestamp-b 20240101000000
 ```
 
-## Technical Details
-
-- **Transport**: stdio (MCP client integration)
-- **Caching**: in-memory and disk-based with per-endpoint TTLs:
-  - Snapshot content: 24 hours (immutable once captured)
-  - Availability, CDX, sparkline: 1 hour (grows but never mutates)
-  - Save operations: 30 minutes (idempotent per URL)
-  - Save status polling: 30 seconds (changes during active jobs)
-- **Rate limiting**: 15 requests per minute, with automatic Retry-After handling for 429 responses
-- **Validation**: Zod schemas for all inputs and API responses
-- **Node.js 22+** required
-
-## Development
-
-Requires [pnpm](https://pnpm.io) and Node.js 22+.
-
-```bash
-pnpm install
-pnpm validate     # typecheck + lint + test + build
-```
-
-## Resources
+## References
 
 - [Internet Archive Developer Portal](https://archive.org/developers/)
 - [CDX Server Documentation](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server)
 - [Save Page Now 2 (SPN2) API](https://docs.google.com/document/d/1Nsv52MvSjbLb2PCpHlat0gkzw0EvtSgpKHu4mk0MnrA/)
 - [Bots, LLMs, and Automated Access](https://archive.org/developers/bots.html)
-
-## Related
-
-- [internet-archive-skills](https://github.com/internetarchive/internet-archive-skills) — Official Claude Code skill for uploading to, downloading from, and searching the Internet Archive via the `ia` Python CLI. Complements this project (general IA operations) vs. this server (Wayback Machine MCP protocol).
+- [internet-archive-skills](https://github.com/internetarchive/internet-archive-skills) — Official Claude Code skill for the `ia` Python CLI; complements this server.
 
 ## License
 
