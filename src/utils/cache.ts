@@ -1,15 +1,16 @@
 /**
- * HTTP request caching with both in-memory and disk backends.
+ * HTTP request caching with in-memory and pluggable persistent backends.
  * Stores serialised responses (status, headers, body) with TTL-based expiry.
  * Supports per-endpoint TTL via URL pattern matching.
  *
- * Disk cache lives under the user's cache directory (XDG_CACHE_HOME or
- * ~/.cache on Linux/macOS, %LOCALAPPDATA% on Windows) with 0700 / 0600
+ * The default disk cache lives under the user's cache directory (XDG_CACHE_HOME
+ * or ~/.cache on Linux/macOS, %LOCALAPPDATA% on Windows) with 0700 / 0600
  * permissions so it cannot be poisoned by other users on a shared host.
+ *
+ * Alternative backends (e.g. Cloudflare KV) implement the CacheBackend interface
+ * and are passed via the CachingFetcher constructor.
  */
 
-import { createHash } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import * as z from "zod";
@@ -57,15 +58,26 @@ export const TTL = {
     SAVE_STATUS: 30 * 1000,
 } as const;
 
+/**
+ * Persistent cache backend — read/write cached HTTP responses.
+ * Implemented by disk (Node.js), KV (Cloudflare Workers), etc.
+ */
+export interface CacheBackend {
+    get(key: string): Promise<CachedResponse | undefined>;
+    set(key: string, entry: CachedResponse): Promise<void>;
+    delete(key: string): Promise<void>;
+    clear(): Promise<void>;
+}
+
 interface CacheConfig {
     /**
      * Default TTL in milliseconds
      */
     ttl: number;
     /**
-     * Directory for disk cache
+     * Persistent cache backend. Defaults to disk cache if not provided.
      */
-    diskDir: string;
+    backend: CacheBackend;
 }
 
 /**
@@ -85,9 +97,74 @@ function defaultCacheDir(): string {
     return join(homedir(), ".cache", "mcp-wayback-machine");
 }
 
+/**
+ * Disk-backed cache backend using the filesystem.
+ * Uses restrictive permissions (0700 dir, 0600 files) to prevent cache poisoning.
+ */
+export class DiskCacheBackend implements CacheBackend {
+    private readonly dir: string;
+
+    constructor(dir: string) {
+        this.dir = dir;
+    }
+
+    async get(key: string): Promise<CachedResponse | undefined> {
+        try {
+            const { readFile } = await import("node:fs/promises");
+            const { join } = await import("node:path");
+            const filePath = join(this.dir, `${key}.json`);
+            const data = await readFile(filePath, "utf-8");
+            const parsed: unknown = JSON.parse(data);
+            return CachedResponse.parse(parsed);
+        } catch {
+            return undefined;
+        }
+    }
+
+    async set(key: string, entry: CachedResponse): Promise<void> {
+        try {
+            const { mkdir, writeFile } = await import("node:fs/promises");
+            const { join } = await import("node:path");
+            await mkdir(this.dir, { recursive: true, mode: 0o700 });
+            const filePath = join(this.dir, `${key}.json`);
+            await writeFile(filePath, JSON.stringify(entry), {
+                encoding: "utf-8",
+                mode: 0o600,
+            });
+        } catch {
+            // Disk cache write failure is non-fatal
+        }
+    }
+
+    async delete(key: string): Promise<void> {
+        try {
+            const { unlink } = await import("node:fs/promises");
+            const { join } = await import("node:path");
+            await unlink(join(this.dir, `${key}.json`));
+        } catch {
+            // File may not exist
+        }
+    }
+
+    async clear(): Promise<void> {
+        try {
+            const { readdir, unlink } = await import("node:fs/promises");
+            const { join } = await import("node:path");
+            const files = await readdir(this.dir);
+            await Promise.all(
+                files.map((file) =>
+                    unlink(join(this.dir, file)).catch(() => undefined)
+                )
+            );
+        } catch {
+            // Directory may not exist
+        }
+    }
+}
+
 const DEFAULT_CONFIG: CacheConfig = {
     ttl: TTL.AVAILABILITY,
-    diskDir: defaultCacheDir(),
+    backend: new DiskCacheBackend(defaultCacheDir()),
 };
 
 /**
@@ -133,8 +210,13 @@ function resolveTtl(url: string): number | false | undefined {
     return undefined;
 }
 
-function hashKey(url: string): string {
-    return createHash("sha256").update(url).digest("hex");
+async function hashKey(url: string): Promise<string> {
+    const data = new TextEncoder().encode(url);
+    const buffer = await crypto.subtle.digest("SHA-256", data);
+    const bytes = new Uint8Array(buffer);
+    return Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
 }
 
 function serialiseHeaders(response: Response): Record<string, string> {
@@ -159,6 +241,13 @@ export class CachingFetcher {
 
     constructor(config: Partial<CacheConfig> = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
+    }
+
+    /**
+     * The persistent backend in use (disk, KV, etc.).
+     */
+    get backend(): CacheBackend {
+        return this.config.backend;
     }
 
     /**
@@ -187,7 +276,7 @@ export class CachingFetcher {
             return fetchWithTimeout(url, options);
         }
 
-        const key = hashKey(url);
+        const key = await hashKey(url);
         const resolvedTtl = resolveTtl(url);
         const ttl = cacheTtl ?? resolvedTtl ?? this.config.ttl;
 
@@ -197,11 +286,11 @@ export class CachingFetcher {
             return toResponse(memoryHit);
         }
 
-        // Check disk cache
-        const diskHit = await this.readDisk(key);
-        if (diskHit !== undefined && diskHit.expiry > Date.now()) {
-            this.memoryCache.set(key, diskHit);
-            return toResponse(diskHit);
+        // Check persistent backend
+        const backendHit = await this.config.backend.get(key);
+        if (backendHit !== undefined && backendHit.expiry > Date.now()) {
+            this.memoryCache.set(key, backendHit);
+            return toResponse(backendHit);
         }
 
         // Cache miss — fetch from network
@@ -217,35 +306,20 @@ export class CachingFetcher {
         };
 
         this.memoryCache.set(key, entry);
-        await this.writeDisk(key, entry);
+        await this.config.backend.set(key, entry);
 
         return toResponse(entry);
     }
 
-    /**
-
-     * * Clear all caches
-
-     */
     async clear(): Promise<void> {
         this.memoryCache.clear();
-        await this.clearDisk();
+        await this.config.backend.clear();
     }
 
-    /**
-
-     * * Get cache statistics
-
-     */
     getStats(): { memoryEntries: number } {
         return { memoryEntries: this.memoryCache.size };
     }
 
-    /**
-
-     * * Remove expired entries from both caches
-
-     */
     async prune(): Promise<void> {
         const now = Date.now();
         for (const [key, entry] of this.memoryCache) {
@@ -253,75 +327,16 @@ export class CachingFetcher {
                 this.memoryCache.delete(key);
             }
         }
-        await this.pruneDisk();
     }
 
-    private async readDisk(key: string): Promise<CachedResponse | undefined> {
-        try {
-            const filePath = join(this.config.diskDir, `${key}.json`);
-            const data = await readFile(filePath, "utf-8");
-            const parsed: unknown = JSON.parse(data);
-            return CachedResponse.parse(parsed);
-        } catch {
-            return undefined;
-        }
-    }
 
-    private async writeDisk(key: string, entry: CachedResponse): Promise<void> {
-        try {
-            await mkdir(this.config.diskDir, { recursive: true, mode: 0o700 });
-            const filePath = join(this.config.diskDir, `${key}.json`);
-            await writeFile(filePath, JSON.stringify(entry), {
-                encoding: "utf-8",
-                mode: 0o600,
-            });
-        } catch {
-            // Disk cache write failure is non-fatal
-        }
-    }
-
-    private async clearDisk(): Promise<void> {
-        try {
-            const { readdir } = await import("node:fs/promises");
-            const files = await readdir(this.config.diskDir);
-            await Promise.all(
-                files.map((file) =>
-                    unlink(join(this.config.diskDir, file)).catch(
-                        () => undefined
-                    )
-                )
-            );
-        } catch {
-            // Directory may not exist
-        }
-    }
-
-    private async pruneDisk(): Promise<void> {
-        try {
-            const { readdir } = await import("node:fs/promises");
-            const now = Date.now();
-            const files = await readdir(this.config.diskDir);
-            await Promise.all(
-                files.map(async (file) => {
-                    const entry = await this.readDisk(
-                        file.replace(".json", "")
-                    );
-                    if (entry !== undefined && entry.expiry <= now) {
-                        await unlink(join(this.config.diskDir, file)).catch(
-                            () => undefined
-                        );
-                    }
-                })
-            );
-        } catch {
-            // Directory may not exist
-        }
-    }
 }
 
 /**
-
- * Shared instance for use across all tools
-
+ * Disk-backed cache backend using the filesystem.
+ * Uses restrictive permissions (0700 dir, 0600 files) to prevent cache poisoning.
+ */
+/**
+ * Shared instance for use across tools in stdio mode.
  */
 export const cachingFetcher = new CachingFetcher();

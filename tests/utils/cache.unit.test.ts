@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CachingFetcher, TTL } from "../../src/utils/cache.ts";
+import { CachingFetcher, DiskCacheBackend, TTL } from "../../src/utils/cache.ts";
 
 const originalFetch = globalThis.fetch;
 let tempDir: string;
@@ -33,7 +33,7 @@ describe("CachingFetcher", () => {
             return Promise.resolve(createMockResponse('{"data":1}'));
         };
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir) });
         const response = await fetcher.fetch("https://example.com/api");
 
         assert.equal(response.status, 200);
@@ -48,7 +48,7 @@ describe("CachingFetcher", () => {
             return Promise.resolve(createMockResponse('{"data":1}'));
         };
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir, ttl: 60000 });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir), ttl: 60000 });
 
         await fetcher.fetch("https://example.com/api");
         const response = await fetcher.fetch("https://example.com/api");
@@ -64,7 +64,7 @@ describe("CachingFetcher", () => {
             return Promise.resolve(createMockResponse('{"ok":true}'));
         };
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir, ttl: 60000 });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir), ttl: 60000 });
 
         await fetcher.fetch("https://example.com/api", { method: "POST" });
         await fetcher.fetch("https://example.com/api", { method: "POST" });
@@ -79,7 +79,7 @@ describe("CachingFetcher", () => {
             return Promise.resolve(createMockResponse('{"ok":true}'));
         };
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir, ttl: 60000 });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir), ttl: 60000 });
 
         await fetcher.fetch("https://example.com/api", {}, false);
         await fetcher.fetch("https://example.com/api", {}, false);
@@ -97,7 +97,7 @@ describe("CachingFetcher", () => {
         };
 
         const fetcher = new CachingFetcher({
-            diskDir: tempDir,
+            backend: new DiskCacheBackend(tempDir),
             ttl: 1, // 1ms TTL
         });
 
@@ -116,7 +116,7 @@ describe("CachingFetcher", () => {
             return Promise.resolve(createMockResponse('{"data":1}'));
         };
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir, ttl: 60000 });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir), ttl: 60000 });
 
         await fetcher.fetch("https://example.com/api");
         await fetcher.clear();
@@ -133,7 +133,7 @@ describe("CachingFetcher", () => {
         };
 
         const fetcher = new CachingFetcher({
-            diskDir: tempDir,
+            backend: new DiskCacheBackend(tempDir),
             ttl: 1,
         });
 
@@ -154,7 +154,7 @@ describe("CachingFetcher", () => {
 
         // Use a non-existent disk dir — writes will fail, reads will miss
         const fetcher = new CachingFetcher({
-            diskDir: "/nonexistent/path/cache",
+            backend: new DiskCacheBackend("/nonexistent/path/cache"),
             ttl: 60000,
         });
 
@@ -167,7 +167,7 @@ describe("CachingFetcher", () => {
         globalThis.fetch = () =>
             Promise.resolve(createMockResponse('{"data":1}'));
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir, ttl: 60000 });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir), ttl: 60000 });
 
         const before = fetcher.getStats();
         assert.equal(before.memoryEntries, 0);
@@ -188,7 +188,7 @@ describe("per-endpoint TTL", () => {
     it("snapshot URLs get longest TTL", async () => {
         globalThis.fetch = () => Promise.resolve(createMockResponse("content"));
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir, ttl: 1000 });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir), ttl: 1000 });
 
         await fetcher.fetch(
             "https://web.archive.org/web/20240101120000id_/https://example.com/"
@@ -201,7 +201,7 @@ describe("per-endpoint TTL", () => {
     it("availability API gets 1-hour TTL", async () => {
         globalThis.fetch = () => Promise.resolve(createMockResponse("{}"));
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir, ttl: 1000 });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir), ttl: 1000 });
 
         await fetcher.fetch(
             "https://archive.org/wayback/available?url=https://example.com"
@@ -214,7 +214,7 @@ describe("per-endpoint TTL", () => {
     it("save status polling gets short TTL", async () => {
         globalThis.fetch = () => Promise.resolve(createMockResponse("{}"));
 
-        const fetcher = new CachingFetcher({ diskDir: tempDir, ttl: 1000 });
+        const fetcher = new CachingFetcher({ backend: new DiskCacheBackend(tempDir), ttl: 1000 });
 
         await fetcher.fetch("https://web.archive.org/save/status/spn2-abc123");
 
