@@ -1,0 +1,18 @@
+#:schema node_modules/wrangler/config-schema.json
+
+name = "mcp-wayback-machine"
+main = "src/worker.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers KV binding for response caching.
+# Free tier: 100k reads/day, 1k writes/day.
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "<your-kv-namespace-id>"
+
+# Optional: IA S3 credentials for higher SPN2 rate limits.
+# Uncomment and set via `wrangler secret put`.
+# [vars]
+# WAYBACK_ACCESS_KEY = ""
+# WAYBACK_SECRET_KEY = ""

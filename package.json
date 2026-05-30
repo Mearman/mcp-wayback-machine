@@ -28,6 +28,8 @@
   "scripts": {
     "build": "turbo run _build",
     "dev": "node --watch src/bin.ts",
+    "dev:worker": "wrangler dev",
+    "deploy": "wrangler deploy",
     "start": "node dist/bin.js",
     "_typecheck": "tsc --noEmit",
     "_lint": "eslint --cache",
@@ -96,7 +98,8 @@
     "semantic-release": "25.0.3",
     "turbo": "2.9.8",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.59.1"
+    "typescript-eslint": "8.59.1",
+    "wrangler": "4.94.0"
   },
   "pnpm": {
     "overrides": {
