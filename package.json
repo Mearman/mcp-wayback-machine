@@ -45,7 +45,7 @@
     "test": "turbo run _test",
     "test:coverage": "turbo run _test:coverage",
     "test:e2e": "WAYBACK_LIVE_TESTS=1 turbo run _test:e2e",
-    "check": "turbo run _check --force",
+    "check": "turbo run _check",
     "validate": "turbo run _validate",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run",
