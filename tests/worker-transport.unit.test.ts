@@ -138,8 +138,9 @@ describe("Worker error handling", () => {
                 isError?: boolean;
             };
         };
-        assert.ok(json.result?.isError === true, "Should have isError: true");
-        const entry = json.result?.content[0];
+        assert.ok(json.result, "Should have result");
+        assert.ok(json.result.isError === true, "Should have isError: true");
+        const entry = json.result.content[0];
         assert.ok(entry, "Should have content");
         const resultText: string = entry.text;
         assert.ok(

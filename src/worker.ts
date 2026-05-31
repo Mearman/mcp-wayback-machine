@@ -183,12 +183,12 @@ export default {
         // Race the MCP handler against a hard timeout so the Worker
         // never hangs indefinitely when upstream APIs are slow or
         // rate-limiting.
-        const timeoutPromise = new Promise<never>((_, reject) =>
+        const timeoutPromise = new Promise<never>((_resolve, reject) => {
             setTimeout(
-                () => reject(new Error(`Worker timeout after ${String(WORKER_TIMEOUT_MS)}ms`)),
+                () => { reject(new Error(`Worker timeout after ${String(WORKER_TIMEOUT_MS)}ms`)); },
                 WORKER_TIMEOUT_MS
-            )
-        );
+            );
+        });
 
         try {
             await server.connect(transport);
