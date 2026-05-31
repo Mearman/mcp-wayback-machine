@@ -66,7 +66,7 @@ describe("Health tool", () => {
         assert.ok(body.length > 0, "Response body should not be empty");
 
         const json = JSON.parse(body) as {
-            result?: { content: Array<{ type: string; text: string }> };
+            result?: { content: { type: string; text: string }[] };
             error?: { message: string };
         };
         assert.ok(
@@ -86,7 +86,7 @@ describe("Health tool", () => {
 
     it("responds instantly even when upstream is slow", async () => {
         const slowPromise = new Promise<Response>(() => {
-            // Never resolves — simulates a hung upstream
+            // Never resolves - simulates a hung upstream
         });
         const ctx: ToolContext = {
             fetch() {
@@ -106,6 +106,7 @@ describe("Health tool", () => {
             params: { name: "health", arguments: {} },
             id: 2,
         });
+        void response;
         const elapsed = Date.now() - start;
 
         assert.equal(response.status, 200);
@@ -133,12 +134,12 @@ describe("Worker error handling", () => {
         const body = await response.text();
         const json = JSON.parse(body) as {
             result?: {
-                content: Array<{ type: string; text: string }>;
+                content: { type: string; text: string }[];
                 isError?: boolean;
             };
         };
-        assert.ok(json.result?.isError, "Should have isError: true");
-        const resultText = json.result?.content?.[0]?.text ?? "";
+        assert.ok(json.result?.isError === true, "Should have isError: true");
+        const resultText: string = json.result?.content[0]?.text ?? "";
         assert.ok(
             resultText.includes("Connection refused"),
             `Error message should mention the cause, got: ${resultText}`
