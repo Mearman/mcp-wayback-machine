@@ -8,63 +8,19 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import * as z from "zod";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createServer } from "../src/server.ts";
 import type { ToolContext } from "../src/tools/context.ts";
-import { CachedResponse as CachedResponseSchema } from "../src/utils/cache.ts";
-import type { CacheBackend } from "../src/utils/cache.ts";
-
-type CachedResponse = z.infer<typeof CachedResponseSchema>;
 
 // --- Helpers ---
 
-class MemoryCacheBackend implements CacheBackend {
-    private readonly store = new Map<string, CachedResponse>();
-    async get(key: string) {
-        return this.store.get(key);
-    }
-    async set(key: string, entry: CachedResponse) {
-        this.store.set(key, entry);
-    }
-    async delete(key: string) {
-        this.store.delete(key);
-    }
-    async clear() {
-        this.store.clear();
-    }
-}
-
-function cannedContext(
-    responses: Map<string, { status: number; body: string }>
-): ToolContext {
-    return {
-        async fetch(url) {
-            const canned = responses.get(url);
-            if (canned !== undefined) {
-                return new Response(canned.body, {
-                    status: canned.status,
-                    headers: { "content-type": "application/json" },
-                });
-            }
-            return fetch(url);
-        },
-        async fetchJSON(url, schema) {
-            const response = await this.fetch(url);
-            const text = await response.text();
-            const parsed: unknown = JSON.parse(text);
-            return schema.parse(parsed);
-        },
-    };
-}
-
 function failingContext(errorMessage: string): ToolContext {
     return {
-        async fetch() {
-            throw new Error(errorMessage);
+        fetch() {
+            return Promise.reject(new Error(errorMessage));
         },
-        async fetchJSON() {
-            throw new Error(errorMessage);
+        fetchJSON() {
+            return Promise.reject(new Error(errorMessage));
         },
     };
 }
@@ -106,10 +62,10 @@ describe("Health tool", () => {
         });
 
         assert.equal(response.status, 200);
-        const text = await response.text();
-        assert.ok(text.length > 0, "Response body should not be empty");
+        const body = await response.text();
+        assert.ok(body.length > 0, "Response body should not be empty");
 
-        const json = JSON.parse(text) as {
+        const json = JSON.parse(body) as {
             result?: { content: Array<{ type: string; text: string }> };
             error?: { message: string };
         };
@@ -129,14 +85,17 @@ describe("Health tool", () => {
     });
 
     it("responds instantly even when upstream is slow", async () => {
+        const slowPromise = new Promise<Response>(() => {
+            // Never resolves — simulates a hung upstream
+        });
         const ctx: ToolContext = {
-            async fetch() {
-                await new Promise((resolve) => setTimeout(resolve, 30_000));
-                return new Response("ok", { status: 200 });
+            fetch() {
+                return slowPromise;
             },
-            async fetchJSON() {
-                await new Promise((resolve) => setTimeout(resolve, 30_000));
-                throw new Error("should not reach here");
+            fetchJSON() {
+                return slowPromise.then(() => {
+                    throw new Error("unreachable");
+                });
             },
         };
 
@@ -171,8 +130,8 @@ describe("Worker error handling", () => {
         });
 
         assert.equal(response.status, 200);
-        const text = await response.text();
-        const json = JSON.parse(text) as {
+        const body = await response.text();
+        const json = JSON.parse(body) as {
             result?: {
                 content: Array<{ type: string; text: string }>;
                 isError?: boolean;
