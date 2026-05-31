@@ -5,17 +5,9 @@ main = "src/worker.ts"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Durable Object for cross-request rate limiting.
-# A singleton DO (fixed ID) maintains a shared sliding window
-# across all Worker invocations.
-[[durable_objects.bindings]]
-name = "RATE_LIMIT_DO"
-class_name = "RateLimitDurableObject"
-
-# Durable Object migration — creates the DO class on first deploy.
-[[migrations]]
-tag = "v1"
-new_classes = ["RateLimitDurableObject"]
+# No KV or Durable Object bindings required.
+# All persistent state uses the Cache API (caches global) which has no
+# published daily limits on the free tier.
 
 # Optional: IA S3 credentials for higher SPN2 rate limits.
 # Set via `wrangler secret put WAYBACK_ACCESS_KEY` etc.

@@ -6,11 +6,13 @@
  * Worker fetch handler signature. Runs in stateless mode (no session ID)
  * so each request is independent and cold starts are handled gracefully.
  *
- * Bindings (wrangler.toml):
- * - CACHE_KV: Workers KV namespace for response caching
- * - RATE_LIMIT_DO: Durable Object for cross-request rate limiting
- * - WAYBACK_ACCESS_KEY: optional IA S3 credentials
+ * All persistent state uses the Cache API (caches) which has no published
+ * daily limits on the free tier. No KV or Durable Object bindings required.
+ *
+ * Environment variables (set via `wrangler secret put`):
+ * - WAYBACK_ACCESS_KEY: optional IA S3 credentials for higher SPN2 rate limits
  * - WAYBACK_SECRET_KEY: optional IA S3 credentials
+ * - MCP_AUTH_TOKEN: optional bearer token for client authentication
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -19,14 +21,12 @@ import { createServer } from "./server.ts";
 import { CachingFetcher } from "./utils/cache.ts";
 import { CacheApiBackend } from "./utils/cache-cache-api.ts";
 import { HttpError } from "./utils/http.ts";
-import { DurableObjectRateLimiter } from "./utils/rate-limit-do.ts";
-import type { RateLimitBackend } from "./utils/rate-limit.ts";
+import { CacheApiRateLimiter } from "./utils/rate-limit-cache-api.ts";
 import { StaticTokenAuthProvider } from "./auth/provider.ts";
 import type { AuthProvider } from "./auth/provider.ts";
 import type { ToolContext } from "./tools/context.ts";
 
 interface Env {
-    RATE_LIMIT_DO: DurableObjectNamespace;
     WAYBACK_ACCESS_KEY?: string;
     WAYBACK_SECRET_KEY?: string;
     MCP_AUTH_TOKEN?: string;
@@ -35,29 +35,24 @@ interface Env {
 const USER_AGENT = "mcp-wayback-machine-worker";
 
 /**
- * Durable Object ID used for rate limiting. A fixed ID ensures all
- * requests route to the same singleton DO instance.
+ * Build a ToolContext wired to Cache API–backed caching and rate limiting,
+ * with optional credentials from Worker environment variables.
  */
-const RATE_LIMIT_DO_ID = "rate-limit";
-
-/**
- * Build a ToolContext wired to KV-backed caching, DO-backed rate
- * limiting, and optional credentials from Worker environment bindings.
- */
-function createContext(env: Env): ToolContext {
+function createContext(_env: Env): ToolContext {
     const cacheBackend = new CacheApiBackend();
     const fetcher = new CachingFetcher({ backend: cacheBackend });
-
-    // Route all rate-limit checks through a singleton Durable Object.
-    // The DO maintains a shared sliding window across all Worker invocations.
-    const doId = env.RATE_LIMIT_DO.idFromName(RATE_LIMIT_DO_ID);
-    const doStub = env.RATE_LIMIT_DO.get(doId);
-    const limiter: RateLimitBackend = new DurableObjectRateLimiter(doStub);
+    const limiter = new CacheApiRateLimiter({
+        maxRequests: 15,
+        windowMs: 60000,
+    });
 
     const credentials =
-        env.WAYBACK_ACCESS_KEY !== undefined &&
-        env.WAYBACK_SECRET_KEY !== undefined
-            ? { accessKey: env.WAYBACK_ACCESS_KEY, secretKey: env.WAYBACK_SECRET_KEY }
+        _env.WAYBACK_ACCESS_KEY !== undefined &&
+        _env.WAYBACK_SECRET_KEY !== undefined
+            ? {
+                  accessKey: _env.WAYBACK_ACCESS_KEY,
+                  secretKey: _env.WAYBACK_SECRET_KEY,
+              }
             : undefined;
 
     function buildHeaders(
@@ -124,6 +119,25 @@ function isWaybackSaveUrl(url: string): boolean {
     return parsed.pathname === "/save" || parsed.pathname.startsWith("/save/");
 }
 
+/**
+ * Build the auth provider from environment bindings.
+ * When MCP_AUTH_TOKEN is set, requires a matching Bearer token.
+ * When absent, all requests are allowed (no auth).
+ */
+function createAuthProvider(env: Env): AuthProvider {
+    if (env.MCP_AUTH_TOKEN !== undefined && env.MCP_AUTH_TOKEN !== "") {
+        return new StaticTokenAuthProvider(env.MCP_AUTH_TOKEN);
+    }
+    return noAuthProvider;
+}
+
+/** No-op provider that allows all requests. */
+const noAuthProvider: AuthProvider = {
+    async validate() {
+        return undefined;
+    },
+};
+
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const auth = createAuthProvider(env);
@@ -165,22 +179,3 @@ export default {
         }
     },
 } satisfies ExportedHandler<Env>;
-
-/**
- * Build the auth provider from environment bindings.
- * When MCP_AUTH_TOKEN is set, requires a matching Bearer token.
- * When absent, all requests are allowed (no auth).
- */
-function createAuthProvider(env: Env): AuthProvider {
-    if (env.MCP_AUTH_TOKEN !== undefined && env.MCP_AUTH_TOKEN !== "") {
-        return new StaticTokenAuthProvider(env.MCP_AUTH_TOKEN);
-    }
-    return noAuthProvider;
-}
-
-/** No-op provider that allows all requests. */
-const noAuthProvider: AuthProvider = {
-    async validate() {
-        return undefined;
-    },
-};
