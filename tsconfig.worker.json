@@ -4,6 +4,6 @@
         "types": ["@cloudflare/workers-types", "@types/node"],
         "noEmit": true
     },
-    "include": ["src/worker.ts", "src/utils/cache-kv.ts", "src/utils/cache.ts", "src/server.ts", "src/tools/**/*.ts", "src/schemas.ts", "src/utils/http.ts", "src/utils/rate-limit.ts", "src/utils/validation.ts"],
+    "include": ["src/worker.ts", "src/utils/cache-kv.ts", "src/utils/cache.ts", "src/utils/rate-limit.ts", "src/utils/rate-limit-do.ts", "src/server.ts", "src/tools/**/*.ts", "src/schemas.ts", "src/utils/http.ts", "src/utils/validation.ts"],
     "exclude": ["node_modules", "dist", "tests"]
 }

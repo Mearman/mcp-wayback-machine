@@ -1,12 +1,30 @@
 /**
- * * Rate limiting utilities for Wayback Machine API
+ * Rate limiting for Wayback Machine API requests.
+ *
+ * RateLimitBackend defines the consumer interface (just acquire()).
+ * InMemoryRateLimiter implements it for single-process use (stdio mode).
+ * Worker deployments use a Durable Object backend (see rate-limit-do.ts).
  */
+
+/**
+ * Consumer interface for rate limiting. Consumers call acquire() before
+ * making a request; it resolves when a slot is available.
+ */
+export interface RateLimitBackend {
+    acquire(): Promise<void>;
+}
+
 interface RateLimitOptions {
     maxRequests: number;
     windowMs: number;
 }
 
-export class RateLimiter {
+/**
+ * In-memory rate limiter using a sliding window of request timestamps.
+ * Suitable for single-process use (stdio mode) where all requests share
+ * the same heap.
+ */
+export class InMemoryRateLimiter implements RateLimitBackend {
     private requests: number[] = [];
     private readonly maxRequests: number;
     private readonly windowMs: number;
@@ -16,21 +34,11 @@ export class RateLimiter {
         this.windowMs = options.windowMs;
     }
 
-    /**
-
-     * * Check if a request can be made without violating rate limits
-
-     */
     canMakeRequest(): boolean {
         this.cleanup();
         return this.requests.length < this.maxRequests;
     }
 
-    /**
-
-     * * Wait until a request can be made
-
-     */
     async waitForSlot(): Promise<void> {
         while (!this.canMakeRequest()) {
             const oldestRequest = this.requests[0];
@@ -45,11 +53,6 @@ export class RateLimiter {
         }
     }
 
-    /**
-
-     * * Record a request
-
-     */
     recordRequest(): void {
         this.requests.push(Date.now());
     }
@@ -62,8 +65,6 @@ export class RateLimiter {
     async acquire(): Promise<void> {
         while (true) {
             await this.waitForSlot();
-            // Synchronous: cleanup + length check + push happens with no awaits
-            // in between, so the limit cannot be breached between callers.
             this.cleanup();
             if (this.requests.length < this.maxRequests) {
                 this.recordRequest();
@@ -72,11 +73,6 @@ export class RateLimiter {
         }
     }
 
-    /**
-
-     * * Remove expired requests from the tracking array
-
-     */
     private cleanup(): void {
         const cutoff = Date.now() - this.windowMs;
         this.requests = this.requests.filter((time) => time > cutoff);
@@ -84,11 +80,10 @@ export class RateLimiter {
 }
 
 /**
-
- * Default rate limiter for Wayback Machine — conservative limits to be respectful of the service.
-
+ * Default rate limiter for stdio mode — conservative limits to be
+ * respectful of the Internet Archive service.
  */
-export const waybackRateLimiter = new RateLimiter({
-    maxRequests: 15, // 15 requests
-    windowMs: 60000, // per minute
+export const waybackRateLimiter: RateLimitBackend = new InMemoryRateLimiter({
+    maxRequests: 15,
+    windowMs: 60000,
 });

@@ -8,6 +8,7 @@
  *
  * Bindings (wrangler.toml):
  * - CACHE_KV: Workers KV namespace for response caching
+ * - RATE_LIMIT_DO: Durable Object for cross-request rate limiting
  * - WAYBACK_ACCESS_KEY: optional IA S3 credentials
  * - WAYBACK_SECRET_KEY: optional IA S3 credentials
  */
@@ -18,11 +19,13 @@ import { createServer } from "./server.ts";
 import { CachingFetcher } from "./utils/cache.ts";
 import { KvCacheBackend } from "./utils/cache-kv.ts";
 import { HttpError } from "./utils/http.ts";
-import { RateLimiter } from "./utils/rate-limit.ts";
+import { DurableObjectRateLimiter } from "./utils/rate-limit-do.ts";
+import type { RateLimitBackend } from "./utils/rate-limit.ts";
 import type { ToolContext } from "./tools/context.ts";
 
 interface Env {
     CACHE_KV: KVNamespace;
+    RATE_LIMIT_DO: DurableObjectNamespace;
     WAYBACK_ACCESS_KEY?: string;
     WAYBACK_SECRET_KEY?: string;
 }
@@ -30,13 +33,24 @@ interface Env {
 const USER_AGENT = "mcp-wayback-machine-worker";
 
 /**
- * Build a ToolContext wired to KV-backed caching, rate limiting, and
- * optional credentials from Worker environment bindings.
+ * Durable Object ID used for rate limiting. A fixed ID ensures all
+ * requests route to the same singleton DO instance.
+ */
+const RATE_LIMIT_DO_ID = "rate-limit";
+
+/**
+ * Build a ToolContext wired to KV-backed caching, DO-backed rate
+ * limiting, and optional credentials from Worker environment bindings.
  */
 function createContext(env: Env): ToolContext {
-    const backend = new KvCacheBackend(env.CACHE_KV);
-    const fetcher = new CachingFetcher({ backend });
-    const limiter = new RateLimiter({ maxRequests: 15, windowMs: 60000 });
+    const cacheBackend = new KvCacheBackend(env.CACHE_KV);
+    const fetcher = new CachingFetcher({ backend: cacheBackend });
+
+    // Route all rate-limit checks through a singleton Durable Object.
+    // The DO maintains a shared sliding window across all Worker invocations.
+    const doId = env.RATE_LIMIT_DO.idFromName(RATE_LIMIT_DO_ID);
+    const doStub = env.RATE_LIMIT_DO.get(doId);
+    const limiter: RateLimitBackend = new DurableObjectRateLimiter(doStub);
 
     const credentials =
         env.WAYBACK_ACCESS_KEY !== undefined &&
@@ -75,7 +89,7 @@ function createContext(env: Env): ToolContext {
                     error instanceof HttpError &&
                     (error.status === 429 || error.status === 498)
                 ) {
-                    // Single retry after 5s for rate limits
+                    // Single retry after 5s for upstream rate limits
                     await new Promise((resolve) => setTimeout(resolve, 5000));
                     return fetcher.fetch(url, { ...options, headers });
                 }

@@ -11,6 +11,18 @@ compatibility_flags = ["nodejs_compat"]
 binding = "CACHE_KV"
 id = "<your-kv-namespace-id>"
 
+# Durable Object for cross-request rate limiting.
+# A singleton DO (fixed ID) maintains a shared sliding window
+# across all Worker invocations.
+[[durable_objects.bindings]]
+name = "RATE_LIMIT_DO"
+class_name = "RateLimitDurableObject"
+
+# Durable Object migration — creates the DO class on first deploy.
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimitDurableObject"]
+
 # Optional: IA S3 credentials for higher SPN2 rate limits.
 # Uncomment and set via `wrangler secret put`.
 # [vars]
