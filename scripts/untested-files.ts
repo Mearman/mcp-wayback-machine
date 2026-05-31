@@ -24,6 +24,10 @@ const allSourceFiles = globSync("src/**/*.ts", {
         "src/bin.ts",
         // Pure TypeScript interface — no runtime code to cover
         "src/tools/context.ts",
+        // Worker files — depend on Cloudflare globals (caches) not available in Node
+        "src/worker.ts",
+        "src/utils/cache-cache-api.ts",
+        "src/utils/rate-limit-cache-api.ts",
     ],
 });
 
@@ -70,7 +74,9 @@ execSync(
 const loadedFiles = new Set<string>();
 for (const file of readdirSync(covDir)) {
     if (!file.endsWith(".json")) continue;
-    const data: V8Coverage = JSON.parse(readFileSync(join(covDir, file), "utf-8"));
+    const data: V8Coverage = JSON.parse(
+        readFileSync(join(covDir, file), "utf-8")
+    );
     for (const entry of data.result) {
         if (!entry.url.includes("/src/")) continue;
         if (entry.url.includes("node_modules")) continue;
@@ -86,12 +92,18 @@ for (const file of readdirSync(covDir)) {
 const untested = allSourceFiles.filter((f) => !loadedFiles.has(f));
 
 if (untested.length > 0) {
-    console.error(`⚠ ${untested.length} source file(s) not covered by any test:`);
+    console.error(
+        `⚠ ${untested.length} source file(s) not covered by any test:`
+    );
     for (const f of untested) {
         console.error(`   ${f}`);
     }
-    console.error("\nThese files are not loaded during the test run, so the built-in");
-    console.error("coverage report does not include them. Add tests that import");
+    console.error(
+        "\nThese files are not loaded during the test run, so the built-in"
+    );
+    console.error(
+        "coverage report does not include them. Add tests that import"
+    );
     console.error("these files, or exclude them from the untested check.");
     process.exit(1);
 } else {
@@ -103,7 +115,11 @@ interface V8Coverage {
         url: string;
         functions: Array<{
             functionName: string;
-            ranges: Array<{ startOffset: number; endOffset: number; count: number }>;
+            ranges: Array<{
+                startOffset: number;
+                endOffset: number;
+                count: number;
+            }>;
             isBlockCoverage: boolean;
         }>;
     }>;

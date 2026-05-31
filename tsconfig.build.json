@@ -9,5 +9,12 @@
         "sourceMap": true
     },
     "include": ["src"],
-    "exclude": ["node_modules", "dist", "tests"]
+    "exclude": [
+        "node_modules",
+        "dist",
+        "tests",
+        "src/worker.ts",
+        "src/utils/cache-cache-api.ts",
+        "src/utils/rate-limit-cache-api.ts"
+    ]
 }
