@@ -25,7 +25,6 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { createServer } from "./server.ts";
 import { CachingFetcher } from "./utils/cache.ts";
 import { CacheApiBackend } from "./utils/cache-cache-api.ts";
-import { HttpError } from "./utils/http.ts";
 import { CacheApiRateLimiter } from "./utils/rate-limit-cache-api.ts";
 import { StaticTokenAuthProvider } from "./auth/provider.ts";
 import type { AuthProvider } from "./auth/provider.ts";
@@ -109,23 +108,7 @@ function createContext(
         async fetch(url, options) {
             await limiter.acquire();
             const headers = buildHeaders(url, options?.headers);
-
-            try {
-                return await fetcher.fetch(url, {
-                    ...options,
-                    headers,
-                });
-            } catch (error) {
-                if (
-                    error instanceof HttpError &&
-                    (error.status === 429 || error.status === 498)
-                ) {
-                    // Single retry after 5s for upstream rate limits
-                    await new Promise((resolve) => setTimeout(resolve, 5000));
-                    return fetcher.fetch(url, { ...options, headers });
-                }
-                throw error;
-            }
+            return fetcher.fetch(url, { ...options, headers });
         },
 
         async fetchJSON(url, schema) {
@@ -172,6 +155,13 @@ const noAuthProvider: AuthProvider = {
     },
 };
 
+/**
+ * Maximum wall-clock time for a single Worker invocation.
+ * Cloudflare Workers on the free tier have a 30-second limit;
+ * we abort at 25s to leave time for cleanup and response serialisation.
+ */
+const WORKER_TIMEOUT_MS = 25_000;
+
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const auth = createAuthProvider(env);
@@ -190,9 +180,22 @@ export default {
         const ctx = createContext(credentials);
         const server: McpServer = createServer(ctx);
 
+        // Race the MCP handler against a hard timeout so the Worker
+        // never hangs indefinitely when upstream APIs are slow or
+        // rate-limiting.
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(
+                () => reject(new Error(`Worker timeout after ${String(WORKER_TIMEOUT_MS)}ms`)),
+                WORKER_TIMEOUT_MS
+            )
+        );
+
         try {
             await server.connect(transport);
-            return await transport.handleRequest(request);
+            return await Promise.race([
+                transport.handleRequest(request),
+                timeoutPromise,
+            ]);
         } catch (error) {
             return new Response(
                 JSON.stringify({

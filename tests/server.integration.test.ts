@@ -121,10 +121,10 @@ describe("MCP server integration", () => {
     });
 
     describe("tools/list", () => {
-        it("returns all seven tools", async () => {
+        it("returns all eight tools", async () => {
             const { tools } = await client.listTools();
 
-            assert.equal(tools.length, 7);
+            assert.equal(tools.length, 8);
 
             const names = tools.map((t) => t.name).sort();
             assert.deepStrictEqual(names, [
@@ -132,6 +132,7 @@ describe("MCP server integration", () => {
                 "clear_cache",
                 "compare_snapshots",
                 "get_archived_url",
+                "health",
                 "list_screenshots",
                 "save_url",
                 "search_archives",

@@ -12,6 +12,7 @@ import { CheckArchiveStatus, checkArchiveStatus } from "./tools/status.ts";
 import { ListScreenshots, listScreenshots } from "./tools/screenshots.ts";
 import { ClearCache, clearCache } from "./tools/cache.ts";
 import { CompareSnapshots, compareSnapshots } from "./tools/compare.ts";
+import { Health, health } from "./tools/health.ts";
 import type { ToolContext } from "./tools/context.ts";
 
 import pkg from "../package.json" with { type: "json" };
@@ -251,6 +252,21 @@ export function createServer(ctx: ToolContext): McpServer {
             }
 
             return toolResult(result.success, text);
+        }
+    );
+
+    server.registerTool(
+        "health",
+        {
+            description:
+                "Check server health and connectivity. " +
+                "Returns server status and version without calling any external APIs. " +
+                "Use to verify the server is responding, for health checks, or as a lightweight connectivity test.",
+            inputSchema: Health,
+        },
+        async () => {
+            const result = health();
+            return toolResult(true, JSON.stringify(result));
         }
     );
 
