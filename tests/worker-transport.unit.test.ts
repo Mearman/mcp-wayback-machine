@@ -8,11 +8,14 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import * as z from "zod";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createServer } from "../src/server.ts";
 import type { ToolContext } from "../src/tools/context.ts";
-import type { CachedResponse } from "../src/utils/cache.ts";
+import { CachedResponse as CachedResponseSchema } from "../src/utils/cache.ts";
 import type { CacheBackend } from "../src/utils/cache.ts";
+
+type CachedResponse = z.infer<typeof CachedResponseSchema>;
 
 // --- Helpers ---
 
@@ -114,7 +117,7 @@ describe("Health tool", () => {
             json.result,
             `Expected result, got error: ${JSON.stringify(json.error)}`
         );
-        const content = json.result.content[0];
+        const content = json.result.content[0]!;
         assert.equal(content.type, "text");
 
         const payload = JSON.parse(content.text) as Record<string, unknown>;
@@ -176,9 +179,10 @@ describe("Worker error handling", () => {
             };
         };
         assert.ok(json.result?.isError, "Should have isError: true");
+        const resultText = json.result?.content?.[0]?.text ?? "";
         assert.ok(
-            json.result.content[0].text.includes("Connection refused"),
-            `Error message should mention the cause, got: ${json.result.content[0].text}`
+            resultText.includes("Connection refused"),
+            `Error message should mention the cause, got: ${resultText}`
         );
     });
 });
