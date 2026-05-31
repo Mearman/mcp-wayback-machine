@@ -162,6 +162,8 @@ jobs:
           cache: pnpm
           # Do NOT set registry-url — it creates an .npmrc that overrides OIDC
 
+      - run: npm install -g npm@latest
+
       - run: pnpm install --frozen-lockfile
 
       - uses: actions/cache@v5
