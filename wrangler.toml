@@ -24,7 +24,13 @@ tag = "v1"
 new_classes = ["RateLimitDurableObject"]
 
 # Optional: IA S3 credentials for higher SPN2 rate limits.
-# Uncomment and set via `wrangler secret put`.
-# [vars]
+# Set via `wrangler secret put WAYBACK_ACCESS_KEY` etc.
+#
+# Optional: Bearer token for MCP client authentication.
+# When set, clients must send `Authorization: Bearer <token>`.
+# Set via `wrangler secret put MCP_AUTH_TOKEN`.
+# When absent, the Worker accepts unauthenticated requests.
+#
 # WAYBACK_ACCESS_KEY = ""
 # WAYBACK_SECRET_KEY = ""
+# MCP_AUTH_TOKEN = ""

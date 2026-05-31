@@ -21,6 +21,8 @@ import { KvCacheBackend } from "./utils/cache-kv.ts";
 import { HttpError } from "./utils/http.ts";
 import { DurableObjectRateLimiter } from "./utils/rate-limit-do.ts";
 import type { RateLimitBackend } from "./utils/rate-limit.ts";
+import { StaticTokenAuthProvider } from "./auth/provider.ts";
+import type { AuthProvider } from "./auth/provider.ts";
 import type { ToolContext } from "./tools/context.ts";
 
 interface Env {
@@ -28,6 +30,7 @@ interface Env {
     RATE_LIMIT_DO: DurableObjectNamespace;
     WAYBACK_ACCESS_KEY?: string;
     WAYBACK_SECRET_KEY?: string;
+    MCP_AUTH_TOKEN?: string;
 }
 
 const USER_AGENT = "mcp-wayback-machine-worker";
@@ -124,6 +127,12 @@ function isWaybackSaveUrl(url: string): boolean {
 
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
+        const auth = createAuthProvider(env);
+        const rejection = await auth.validate(request);
+        if (rejection !== undefined) {
+            return rejection;
+        }
+
         const transport = new WebStandardStreamableHTTPServerTransport({
             // No sessionIdGenerator — stateless mode. Each request is independent
             // so cold starts don't break sessions.
@@ -157,3 +166,22 @@ export default {
         }
     },
 } satisfies ExportedHandler<Env>;
+
+/**
+ * Build the auth provider from environment bindings.
+ * When MCP_AUTH_TOKEN is set, requires a matching Bearer token.
+ * When absent, all requests are allowed (no auth).
+ */
+function createAuthProvider(env: Env): AuthProvider {
+    if (env.MCP_AUTH_TOKEN !== undefined && env.MCP_AUTH_TOKEN !== "") {
+        return new StaticTokenAuthProvider(env.MCP_AUTH_TOKEN);
+    }
+    return noAuthProvider;
+}
+
+/** No-op provider that allows all requests. */
+const noAuthProvider: AuthProvider = {
+    async validate() {
+        return undefined;
+    },
+};
