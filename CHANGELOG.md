@@ -1,3 +1,22 @@
+## [3.7.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.4...v3.7.0) (2026-05-31)
+
+### Features
+
+* **worker:** add health tool, hard timeout, remove 498 retry ([2e7ffd9](https://github.com/Mearman/mcp-wayback-machine/commit/2e7ffd9939121c8b8d8193ec732d3b11ed491825))
+
+### Bug Fixes
+
+* remove unnecessary async from health tool, fix lint in tests ([44f4dea](https://github.com/Mearman/mcp-wayback-machine/commit/44f4dea7af1d863d57b688fc74aab4e1aa115f34))
+* resolve lint errors in worker timeout and test ([c11deb8](https://github.com/Mearman/mcp-wayback-machine/commit/c11deb8c418ed26f94f7016d45b99928e9df2292))
+* resolve lint errors in worker transport test ([fed7578](https://github.com/Mearman/mcp-wayback-machine/commit/fed7578f6452a69fceb55ba225a020847bf6d621))
+* resolve remaining lint errors in worker transport test ([342fffd](https://github.com/Mearman/mcp-wayback-machine/commit/342fffd075564ae137eafe14a271b1aa1f4af783))
+* resolve TypeScript errors in worker transport test ([afb6344](https://github.com/Mearman/mcp-wayback-machine/commit/afb6344d7ca2f0977af7caa734b6f74be97b18de))
+
+### CI
+
+* force turbo cache bust for lint ([c294518](https://github.com/Mearman/mcp-wayback-machine/commit/c294518fcf9bed3dc5a8ce07c9fd14190e7a0822))
+* remove turbo --force from check script ([e4e7251](https://github.com/Mearman/mcp-wayback-machine/commit/e4e7251f99548bcbbd4416fc12774f4363b82af3))
+
 ## [3.6.4](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.3...v3.6.4) (2026-05-31)
 
 ### CI
