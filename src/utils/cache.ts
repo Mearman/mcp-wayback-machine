@@ -16,7 +16,7 @@ import { homedir } from "node:os";
 import * as z from "zod";
 import { fetchWithTimeout } from "./http.ts";
 
-const CachedResponse = z.object({
+export const CachedResponse = z.object({
     status: z.number(),
     statusText: z.string().trim(),
     headers: z.record(z.string(), z.string().trim()),

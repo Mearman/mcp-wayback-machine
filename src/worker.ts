@@ -17,7 +17,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createServer } from "./server.ts";
 import { CachingFetcher } from "./utils/cache.ts";
-import { KvCacheBackend } from "./utils/cache-kv.ts";
+import { CacheApiBackend } from "./utils/cache-cache-api.ts";
 import { HttpError } from "./utils/http.ts";
 import { DurableObjectRateLimiter } from "./utils/rate-limit-do.ts";
 import type { RateLimitBackend } from "./utils/rate-limit.ts";
@@ -26,7 +26,6 @@ import type { AuthProvider } from "./auth/provider.ts";
 import type { ToolContext } from "./tools/context.ts";
 
 interface Env {
-    CACHE_KV: KVNamespace;
     RATE_LIMIT_DO: DurableObjectNamespace;
     WAYBACK_ACCESS_KEY?: string;
     WAYBACK_SECRET_KEY?: string;
@@ -46,7 +45,7 @@ const RATE_LIMIT_DO_ID = "rate-limit";
  * limiting, and optional credentials from Worker environment bindings.
  */
 function createContext(env: Env): ToolContext {
-    const cacheBackend = new KvCacheBackend(env.CACHE_KV);
+    const cacheBackend = new CacheApiBackend();
     const fetcher = new CachingFetcher({ backend: cacheBackend });
 
     // Route all rate-limit checks through a singleton Durable Object.

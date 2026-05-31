@@ -5,12 +5,6 @@ main = "src/worker.ts"
 compatibility_date = "2025-05-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Workers KV binding for response caching.
-# Free tier: 100k reads/day, 1k writes/day.
-[[kv_namespaces]]
-binding = "CACHE_KV"
-id = "<your-kv-namespace-id>"
-
 # Durable Object for cross-request rate limiting.
 # A singleton DO (fixed ID) maintains a shared sliding window
 # across all Worker invocations.

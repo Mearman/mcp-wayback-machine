@@ -18,5 +18,5 @@
         "verbatimModuleSyntax": true
     },
     "include": ["src", "tests"],
-    "exclude": ["node_modules", "dist", "src/worker.ts", "src/utils/rate-limit-do.ts"]
+    "exclude": ["node_modules", "dist", "src/worker.ts", "src/utils/rate-limit-do.ts", "src/utils/cache-cache-api.ts"]
 }
