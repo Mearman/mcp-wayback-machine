@@ -1,3 +1,9 @@
+## [3.6.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.1...v3.6.2) (2026-05-31)
+
+### CI
+
+* use npm Trusted Publishers (OIDC) instead of NPM_TOKEN secret ([c9c4bec](https://github.com/Mearman/mcp-wayback-machine/commit/c9c4bec44a158eeaa0b845a8726ae8afabf9a800))
+
 ## [3.6.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.0...v3.6.1) (2026-05-31)
 
 ### Bug Fixes
