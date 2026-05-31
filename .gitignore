@@ -13,6 +13,7 @@ coverage/
 .turbo/
 .cache/
 .eslintcache
+.wrangler/
 
 # Environment files
 .env
