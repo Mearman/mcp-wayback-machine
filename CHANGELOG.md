@@ -1,3 +1,9 @@
+## [3.6.4](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.3...v3.6.4) (2026-05-31)
+
+### CI
+
+* upgrade npm to latest for OIDC Trusted Publishers support ([b4b9f1d](https://github.com/Mearman/mcp-wayback-machine/commit/b4b9f1de5e87858430dd7313d484dc36c08b8ef4))
+
 ## [3.6.3](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.2...v3.6.3) (2026-05-31)
 
 ### CI
