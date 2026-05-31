@@ -264,7 +264,7 @@ export function createServer(ctx: ToolContext): McpServer {
                 "Use to verify the server is responding, for health checks, or as a lightweight connectivity test.",
             inputSchema: Health,
         },
-        async () => {
+        () => {
             const result = health();
             return toolResult(true, JSON.stringify(result));
         }

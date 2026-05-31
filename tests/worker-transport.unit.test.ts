@@ -139,7 +139,9 @@ describe("Worker error handling", () => {
             };
         };
         assert.ok(json.result?.isError === true, "Should have isError: true");
-        const resultText: string = json.result?.content[0]?.text ?? "";
+        const entry = json.result?.content[0];
+        assert.ok(entry, "Should have content");
+        const resultText: string = entry.text;
         assert.ok(
             resultText.includes("Connection refused"),
             `Error message should mention the cause, got: ${resultText}`
