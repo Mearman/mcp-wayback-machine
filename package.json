@@ -1,7 +1,7 @@
 {
   "name": "mcp-wayback-machine",
   "mcpName": "io.github.Mearman/mcp-wayback-machine",
-  "version": "3.6.2",
+  "version": "3.6.3",
   "description": "MCP server and CLI tool for interacting with the Wayback Machine without API keys",
   "main": "./dist/bin.js",
   "type": "module",

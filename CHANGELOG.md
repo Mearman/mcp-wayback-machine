@@ -1,3 +1,9 @@
+## [3.6.3](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.2...v3.6.3) (2026-05-31)
+
+### CI
+
+* match agent-comms OIDC pattern — no NPM_TOKEN, no registry-url ([4df7cf6](https://github.com/Mearman/mcp-wayback-machine/commit/4df7cf66f8707c09a74a52521ae9cc648db6aa6f))
+
 ## [3.6.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.1...v3.6.2) (2026-05-31)
 
 ### CI
