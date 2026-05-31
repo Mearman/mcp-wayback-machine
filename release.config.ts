@@ -47,7 +47,8 @@ const config: GlobalConfig = {
         [
             "@semantic-release/exec",
             {
-                prepareCmd: "node scripts/sync-plugin-version.ts",
+                prepareCmd:
+                    "node --experimental-strip-types scripts/sync-plugin-version.ts",
             },
         ],
         [
