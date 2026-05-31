@@ -1,3 +1,36 @@
+## [3.6.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.5.2...v3.6.0) (2026-05-31)
+
+### Features
+
+* **auth:** add pluggable AuthProvider with static bearer token implementation ([f895a74](https://github.com/Mearman/mcp-wayback-machine/commit/f895a74b49aec3d76f81d7c1bb8ac2f52403e2e5))
+* **cache:** add Cache API backend, replace KV for Worker caching ([7c5ac24](https://github.com/Mearman/mcp-wayback-machine/commit/7c5ac246771629e180615757ebe2d2f38463e3da))
+* **cache:** store disk cache under the user's cache directory instead of tmpdir ([a81a807](https://github.com/Mearman/mcp-wayback-machine/commit/a81a807f05cb774b4b4d1ab45296ca2564366977))
+* **rate-limit:** add Cache API rate limiter, remove Durable Object dependency ([f375c42](https://github.com/Mearman/mcp-wayback-machine/commit/f375c424cfc6a2f8aabee2f78d5a4c02f94308ce))
+* **rate-limit:** extract RateLimitBackend interface, add Durable Object backend ([e75af71](https://github.com/Mearman/mcp-wayback-machine/commit/e75af716a450e06f291f6b76e7ac11daea3f420e))
+* **snapshots:** cap returned snapshot bytes and label content blocks for downstream parsers ([0351ca9](https://github.com/Mearman/mcp-wayback-machine/commit/0351ca9077af4e1f74a5827232716a2aea21e959))
+* **validation:** require http(s) URLs and 14-digit timestamps in tool input schemas ([c8487b2](https://github.com/Mearman/mcp-wayback-machine/commit/c8487b26f3496bf331a979392b02732e54d9049d))
+* **worker:** accept per-request IA credentials via headers ([da8266b](https://github.com/Mearman/mcp-wayback-machine/commit/da8266bd260a9900f230675e0f62d803825ea346))
+* **worker:** add Cloudflare Worker entry point with KV cache backend ([19f8e06](https://github.com/Mearman/mcp-wayback-machine/commit/19f8e06cc7aa7d7ffe664f1d0a10c23c289d8967))
+
+### Bug Fixes
+
+* **rate-limit:** atomic acquire() so concurrent callers stay under the configured limit ([fd52af4](https://github.com/Mearman/mcp-wayback-machine/commit/fd52af4b257024095f9c4afa37375049c2960e93))
+
+### Refactoring
+
+* **cache:** extract CacheBackend interface from CachingFetcher ([f3d684a](https://github.com/Mearman/mcp-wayback-machine/commit/f3d684a7be5e707a5743e270039152d5d93373b3))
+* **contexts:** match the SPN2 save endpoint via URL parsing instead of substring ([fc219aa](https://github.com/Mearman/mcp-wayback-machine/commit/fc219aaed8f2e35cada7ecac070e1b59265d0f12))
+* **lint:** replace eslint-plugin-prettier with standalone Prettier ([c12bda0](https://github.com/Mearman/mcp-wayback-machine/commit/c12bda04eb71510f10b5f4f17e8200253220b2a4))
+
+### Documentation
+
+* expand README with architecture, conventions, and gotchas ([ce9d16c](https://github.com/Mearman/mcp-wayback-machine/commit/ce9d16cd90f95a48358e5116bf4b281761aab2c8))
+
+### Chores
+
+* **deps:** update pnpm-lock.yaml for Worker dependencies ([3d83e29](https://github.com/Mearman/mcp-wayback-machine/commit/3d83e2920cabfd4deba51172fd9b9def6fd60e8b))
+* remove superseded KV/DO backends, fix build config ([b97327a](https://github.com/Mearman/mcp-wayback-machine/commit/b97327a972bce4b2960fe9c862e26818415a6b28))
+
 ## [3.5.2](https://github.com/Mearman/mcp-wayback-machine/compare/v3.5.1...v3.5.2) (2026-05-11)
 
 ### Build
