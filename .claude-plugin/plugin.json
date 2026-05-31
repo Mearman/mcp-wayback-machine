@@ -1,7 +1,7 @@
 {
     "name": "mcp-wayback-machine",
     "description": "MCP server for the Wayback Machine — save URLs, retrieve snapshots, search archives, check status, list screenshots, compare snapshots, and manage cache",
-    "version": "3.7.0",
+    "version": "3.7.1",
     "author": {
         "name": "Joseph Mearman",
         "url": "https://github.com/Mearman"

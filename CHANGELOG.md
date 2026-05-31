@@ -1,3 +1,9 @@
+## [3.7.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.7.0...v3.7.1) (2026-05-31)
+
+### Chores
+
+* add .wrangler/ to .gitignore ([ecfa6a4](https://github.com/Mearman/mcp-wayback-machine/commit/ecfa6a4599cd512b2a9f999c3c8ef88b66a24605))
+
 ## [3.7.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.4...v3.7.0) (2026-05-31)
 
 ### Features
