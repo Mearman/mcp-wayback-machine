@@ -62,7 +62,7 @@ const covDir = mkdtempSync(join(tmpdir(), "cov-"));
 
 // Run tests with V8 coverage
 execSync(
-    `node --test 'tests/**/*.unit.test.ts' 'tests/**/*.integration.test.ts'`,
+    `node --experimental-strip-types --test 'tests/**/*.unit.test.ts' 'tests/**/*.integration.test.ts'`,
     {
         cwd: projectRoot,
         env: { ...process.env, NODE_V8_COVERAGE: covDir },
