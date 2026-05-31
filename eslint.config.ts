@@ -116,6 +116,14 @@ const configFiles = [
     "lint-staged.config.ts",
 ];
 
+// Worker files excluded from the main tsconfig (they depend on
+// @cloudflare/workers-types) but still need linting.
+const workerFiles = [
+    "src/worker.ts",
+    "src/utils/cache-cache-api.ts",
+    "src/utils/rate-limit-cache-api.ts",
+];
+
 const sharedPluginRules = {
     custom: {
         rules: {
@@ -164,6 +172,8 @@ export default defineConfig(
         rules: {
             "@typescript-eslint/no-floating-promises": "off",
             "@typescript-eslint/consistent-type-assertions": "off",
+            "@typescript-eslint/no-non-null-assertion": "off",
+            "@typescript-eslint/no-unnecessary-type-assertion": "off",
         },
     },
 
@@ -177,12 +187,40 @@ export default defineConfig(
         ],
         languageOptions: {
             parserOptions: {
-                projectService: { allowDefaultProject: configFiles },
+                projectService: {
+                    allowDefaultProject: [...configFiles, ...workerFiles],
+                },
                 tsconfigRootDir: import.meta.dirname,
             },
         },
         plugins: sharedPluginRules,
         rules: sharedRules,
+    },
+
+    // Worker files — type-checked via tsconfig.worker.json, linted here
+    {
+        files: workerFiles,
+        extends: [
+            eslint.configs.recommended,
+            ...configs.strictTypeChecked,
+            ...configs.stylisticTypeChecked,
+        ],
+        languageOptions: {
+            parserOptions: {
+                projectService: {
+                    allowDefaultProject: [...configFiles, ...workerFiles],
+                },
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+        plugins: sharedPluginRules,
+        rules: {
+            ...sharedRules,
+            // Worker entry point constructs Request/Response directly
+            "@typescript-eslint/consistent-type-assertions": "off",
+            // allowDefaultProject doesn't resolve Workers types properly
+            "@typescript-eslint/await-thenable": "off",
+        },
     },
 
     {

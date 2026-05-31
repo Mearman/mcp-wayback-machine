@@ -320,16 +320,15 @@ export class CachingFetcher {
         return { memoryEntries: this.memoryCache.size };
     }
 
-    async prune(): Promise<void> {
+    prune(): Promise<void> {
         const now = Date.now();
         for (const [key, entry] of this.memoryCache) {
             if (entry.expiry <= now) {
                 this.memoryCache.delete(key);
             }
         }
+        return Promise.resolve();
     }
-
-
 }
 
 /**

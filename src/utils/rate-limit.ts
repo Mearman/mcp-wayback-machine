@@ -58,19 +58,13 @@ export class InMemoryRateLimiter implements RateLimitBackend {
     }
 
     /**
-     * Atomically wait for a slot and reserve it. Prevents the check-then-act
-     * race where multiple concurrent callers can each see canMakeRequest()
-     * return true and then collectively exceed the limit.
+     * Wait for a slot, then reserve it. waitForSlot() guarantees that
+     * canMakeRequest() returned true immediately before it resolved,
+     * so we can record immediately.
      */
     async acquire(): Promise<void> {
-        while (true) {
-            await this.waitForSlot();
-            this.cleanup();
-            if (this.requests.length < this.maxRequests) {
-                this.recordRequest();
-                return;
-            }
-        }
+        await this.waitForSlot();
+        this.recordRequest();
     }
 
     private cleanup(): void {

@@ -40,37 +40,38 @@ export class StaticTokenAuthProvider implements AuthProvider {
         this.expectedToken = token;
     }
 
-    async validate(request: Request): Promise<Response | undefined> {
+    validate(request: Request): Promise<Response | undefined> {
         const header = request.headers.get("Authorization");
         if (header === null) {
-            return unauthorized("Missing Authorization header");
+            return Promise.resolve(
+                unauthorized("Missing Authorization header")
+            );
         }
 
         const match = /^Bearer\s+(.+)$/i.exec(header);
         if (match === null) {
-            return unauthorized("Invalid Authorization header format");
+            return Promise.resolve(
+                unauthorized("Invalid Authorization header format")
+            );
         }
 
         const token = match[1] ?? "";
         if (token === "" || !constantTimeEqual(token, this.expectedToken)) {
-            return unauthorized("Invalid token");
+            return Promise.resolve(unauthorized("Invalid token"));
         }
 
-        return undefined;
+        return Promise.resolve(undefined);
     }
 }
 
 function unauthorized(message: string): Response {
-    return new Response(
-        JSON.stringify({ error: message }),
-        {
-            status: 401,
-            headers: {
-                "content-type": "application/json",
-                "WWW-Authenticate": 'Bearer realm="mcp-wayback-machine"',
-            },
-        }
-    );
+    return new Response(JSON.stringify({ error: message }), {
+        status: 401,
+        headers: {
+            "content-type": "application/json",
+            "WWW-Authenticate": 'Bearer realm="mcp-wayback-machine"',
+        },
+    });
 }
 
 /**

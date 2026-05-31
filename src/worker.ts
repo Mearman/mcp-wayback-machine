@@ -9,9 +9,14 @@
  * All persistent state uses the Cache API (caches) which has no published
  * daily limits on the free tier. No KV or Durable Object bindings required.
  *
+ * Authentication:
+ * - MCP_AUTH_TOKEN env var: optional bearer token for client authentication
+ * - X-Archive-Access-Key / X-Archive-Secret-Key headers: per-request IA S3
+ *   credentials, overriding WAYBACK_ACCESS_KEY / WAYBACK_SECRET_KEY env vars
+ *
  * Environment variables (set via `wrangler secret put`):
- * - WAYBACK_ACCESS_KEY: optional IA S3 credentials for higher SPN2 rate limits
- * - WAYBACK_SECRET_KEY: optional IA S3 credentials
+ * - WAYBACK_ACCESS_KEY: fallback IA S3 credentials for higher SPN2 rate limits
+ * - WAYBACK_SECRET_KEY: fallback IA S3 credentials
  * - MCP_AUTH_TOKEN: optional bearer token for client authentication
  */
 
@@ -35,25 +40,54 @@ interface Env {
 const USER_AGENT = "mcp-wayback-machine-worker";
 
 /**
- * Build a ToolContext wired to Cache API–backed caching and rate limiting,
- * with optional credentials from Worker environment variables.
+ * Header names for per-request IA S3 credentials.
+ * When present, these override the Worker's environment variables,
+ * so each client can use its own credentials for higher SPN2 rate limits.
  */
-function createContext(_env: Env): ToolContext {
+const HEADER_ACCESS_KEY = "X-Archive-Access-Key";
+const HEADER_SECRET_KEY = "X-Archive-Secret-Key";
+
+/**
+ * Resolve IA S3 credentials: per-request headers take precedence over
+ * Worker environment variables. Returns undefined when neither source
+ * provides a complete key pair.
+ */
+function resolveCredentials(
+    request: Request,
+    env: Env
+): { accessKey: string; secretKey: string } | undefined {
+    const headerAccess = request.headers.get(HEADER_ACCESS_KEY);
+    const headerSecret = request.headers.get(HEADER_SECRET_KEY);
+    if (headerAccess !== null && headerSecret !== null) {
+        return { accessKey: headerAccess, secretKey: headerSecret };
+    }
+
+    if (
+        env.WAYBACK_ACCESS_KEY !== undefined &&
+        env.WAYBACK_SECRET_KEY !== undefined
+    ) {
+        return {
+            accessKey: env.WAYBACK_ACCESS_KEY,
+            secretKey: env.WAYBACK_SECRET_KEY,
+        };
+    }
+
+    return undefined;
+}
+
+/**
+ * Build a ToolContext wired to Cache API–backed caching and rate limiting,
+ * with optional credentials resolved from request headers or env vars.
+ */
+function createContext(
+    credentials: { accessKey: string; secretKey: string } | undefined
+): ToolContext {
     const cacheBackend = new CacheApiBackend();
     const fetcher = new CachingFetcher({ backend: cacheBackend });
     const limiter = new CacheApiRateLimiter({
         maxRequests: 15,
         windowMs: 60000,
     });
-
-    const credentials =
-        _env.WAYBACK_ACCESS_KEY !== undefined &&
-        _env.WAYBACK_SECRET_KEY !== undefined
-            ? {
-                  accessKey: _env.WAYBACK_ACCESS_KEY,
-                  secretKey: _env.WAYBACK_SECRET_KEY,
-              }
-            : undefined;
 
     function buildHeaders(
         url: string,
@@ -133,8 +167,8 @@ function createAuthProvider(env: Env): AuthProvider {
 
 /** No-op provider that allows all requests. */
 const noAuthProvider: AuthProvider = {
-    async validate() {
-        return undefined;
+    validate() {
+        return Promise.resolve(undefined);
     },
 };
 
@@ -152,7 +186,8 @@ export default {
             enableJsonResponse: true,
         });
 
-        const ctx = createContext(env);
+        const credentials = resolveCredentials(request, env);
+        const ctx = createContext(credentials);
         const server: McpServer = createServer(ctx);
 
         try {

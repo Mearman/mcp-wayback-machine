@@ -32,9 +32,7 @@ export class CacheApiRateLimiter implements RateLimitBackend {
     }
 
     private async getCache() {
-        if (this.cache === undefined) {
-            this.cache = await caches.open(CACHE_NAME);
-        }
+        this.cache ??= await caches.open(CACHE_NAME);
         return this.cache;
     }
 
@@ -71,7 +69,7 @@ export class CacheApiRateLimiter implements RateLimitBackend {
         cache: Cache,
         key: string,
         now: number
-    ): WindowState {
+    ): Promise<WindowState> {
         try {
             const request = new Request(`https://ratelimit.local/${key}`);
             const response = await cache.match(request);
@@ -134,6 +132,6 @@ export class CacheApiRateLimiter implements RateLimitBackend {
      */
     private windowKey(now: number): string {
         const windowIndex = Math.floor(now / this.windowMs);
-        return `w-${windowIndex}`;
+        return `w-${String(windowIndex)}`;
     }
 }

@@ -29,9 +29,7 @@ export class CacheApiBackend implements CacheBackend {
     private cache?: Cache;
 
     private async getCache(): Promise<Cache> {
-        if (this.cache === undefined) {
-            this.cache = await caches.open(CACHE_NAME);
-        }
+        this.cache ??= await caches.open(CACHE_NAME);
         return this.cache;
     }
 

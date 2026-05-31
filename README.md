@@ -189,6 +189,47 @@ npm install -g mcp-wayback-machine
 wayback save https://example.com
 ```
 
+### As a Cloudflare Worker
+
+Deploy the MCP server as a stateless Cloudflare Worker. Runs on the **free tier** with no paid bindings — all persistent state uses the [Cache API](https://developers.cloudflare.com/workers/runtime-apis/cache/) which has no published daily limits.
+
+```bash
+pnpm add -D wrangler
+wrangler deploy
+```
+
+The Worker uses the SDK's `StreamableHTTPServerTransport` in stateless mode (no session IDs), so each request is independent and cold starts are handled gracefully.
+
+**Environment variables** (set via `wrangler secret put`):
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `WAYBACK_ACCESS_KEY` | No | Fallback IA S3 credentials for higher SPN2 rate limits |
+| `WAYBACK_SECRET_KEY` | No | Fallback IA S3 credentials |
+| `MCP_AUTH_TOKEN` | No | Bearer token for client authentication |
+
+When `MCP_AUTH_TOKEN` is set, clients must send `Authorization: Bearer <token>`. When absent, the Worker accepts unauthenticated requests.
+
+**Per-request credentials.** Clients can pass their own IA S3 credentials on each request via HTTP headers, overriding the server's environment variables:
+
+```
+X-Archive-Access-Key: <your-access-key>
+X-Archive-Secret-Key: <your-secret-key>
+```
+
+This lets multiple users share a single Worker deployment while each using their own credentials for higher SPN2 rate limits. When both headers are present, they take precedence over `WAYBACK_ACCESS_KEY`/`WAYBACK_SECRET_KEY`. When absent, the Worker falls back to its environment variables.
+
+**Worker-specific files** are excluded from the main `tsconfig.json` and type-checked separately via `tsconfig.worker.json` (which adds `@cloudflare/workers-types`).
+
+**Architecture.** The stdio and Worker deployments share the same tool logic through pluggable interfaces:
+
+| Component | Stdio | Worker |
+|---|---|---|
+| Caching | `DiskCacheBackend` (OS cache dir) | `CacheApiBackend` (`caches.open()`) |
+| Rate limiting | `InMemoryRateLimiter` | `CacheApiRateLimiter` |
+| Auth | None | `StaticTokenAuthProvider` (optional) |
+| Credentials | Environment variables | Request headers, then environment variables |
+
 ## Quick examples
 
 ```
