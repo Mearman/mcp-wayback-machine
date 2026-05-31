@@ -1,3 +1,16 @@
+## [3.6.1](https://github.com/Mearman/mcp-wayback-machine/compare/v3.6.0...v3.6.1) (2026-05-31)
+
+### Bug Fixes
+
+* add --experimental-strip-types to release prepare script ([b1d35c9](https://github.com/Mearman/mcp-wayback-machine/commit/b1d35c9892afb5ee3c55c7f5bf1db18371138e47))
+* add --experimental-strip-types to untested-files subprocess ([be44561](https://github.com/Mearman/mcp-wayback-machine/commit/be44561d0a7f2d34a80f6c2d44ffad123c3a68b2))
+* add NODE_OPTIONS=--experimental-strip-types to pre-commit hook ([1723863](https://github.com/Mearman/mcp-wayback-machine/commit/17238638f9b27a4e4aae05985c083d2c96e0ae75))
+
+### Chores
+
+* pin Node 22.16.0 in .tool-versions for Cloudflare build compat ([44491c4](https://github.com/Mearman/mcp-wayback-machine/commit/44491c46ae73f90b298b9809366167607b22623d))
+* pin Node 22.16.0, add --experimental-strip-types to test scripts ([ed6f774](https://github.com/Mearman/mcp-wayback-machine/commit/ed6f7741f74c8beda2d465cf9f1e8b67eca097ce))
+
 ## [3.6.0](https://github.com/Mearman/mcp-wayback-machine/compare/v3.5.2...v3.6.0) (2026-05-31)
 
 ### Features
