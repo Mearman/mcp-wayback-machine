@@ -160,7 +160,7 @@ jobs:
         with:
           node-version-file: .tool-versions
           cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
+          # Do NOT set registry-url — it creates an .npmrc that overrides OIDC
 
       - run: pnpm install --frozen-lockfile
 
@@ -177,8 +177,6 @@ jobs:
         id: detect-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ''
-          NODE_AUTH_TOKEN: ''
         run: |
           pnpm exec semantic-release 2>&1 | tee release-output.txt
           EXIT_CODE=${PIPESTATUS[0]}
@@ -217,19 +215,19 @@ jobs:
         include:
           - name: wayback-machine-mcp
             registry: https://registry.npmjs.org
-            token: ''
+            isGitHubPackages: false
             provenance: --provenance
           - name: mcp-internet-archive
             registry: https://registry.npmjs.org
-            token: ''
+            isGitHubPackages: false
             provenance: --provenance
           - name: internet-archive-mcp
             registry: https://registry.npmjs.org
-            token: ''
+            isGitHubPackages: false
             provenance: --provenance
           - name: "@mearman/mcp-wayback-machine"
             registry: https://npm.pkg.github.com
-            token: GITHUB_TOKEN
+            isGitHubPackages: true
             provenance: --no-provenance
     permissions:
       contents: read
@@ -258,4 +256,4 @@ jobs:
           pnpm publish --access public --no-git-checks ${{ matrix.provenance }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ matrix.token == 'GITHUB_TOKEN' && secrets.GITHUB_TOKEN || '' }}
+          NODE_AUTH_TOKEN: ${{ matrix.isGitHubPackages && secrets.GITHUB_TOKEN || '' }}
