@@ -6,6 +6,9 @@
 
 > MCP server and CLI tool for interacting with the Internet Archive's Wayback Machine. Supports full CDX search, snapshot content retrieval, screenshot listing, snapshot comparison, and optional authentication for higher SPN2 rate limits.
 
+[![npm downloads chart, log scale](https://shieldcn.dev/chart/npm/mcp-wayback-machine.svg?bg=transparent&logo=false&yScale=log)](https://www.npmjs.com/package/mcp-wayback-machine)
+[![GitHub stars chart, log scale](https://shieldcn.dev/chart/stars/Mearman/mcp-wayback-machine.svg?bg=transparent&logo=false&yScale=log)](https://github.com/Mearman/mcp-wayback-machine/stargazers)
+
 **Stack:** TypeScript · Node.js 22+ · ES Modules · pnpm · Turbo · Zod
 
 ## Getting started
