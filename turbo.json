@@ -1,48 +1,106 @@
 {
-    "$schema": "https://turbo.build/schema.json",
-    "globalPassThroughEnv": ["WAYBACK_LIVE_TESTS"],
-    "tasks": {
-        "_typecheck": {
-            "inputs": ["src/**/*.ts", "tests/**/*.ts", "tsconfig.json"],
-            "outputs": [".tsbuildinfo"]
-        },
-        "_lint": {
-            "inputs": ["src/**/*.ts", "tests/**/*.ts", "eslint.config.ts"],
-            "outputs": [".eslintcache"]
-        },
-        "_lint:fix": {
-            "inputs": ["src/**/*.ts", "tests/**/*.ts", "eslint.config.ts"],
-            "outputs": [".eslintcache"],
-            "cache": false
-        },
-        "_test": {
-            "dependsOn": ["_typecheck"],
-            "inputs": ["src/**/*.ts", "tests/**/*.ts"]
-        },
-        "_test:coverage": {
-            "dependsOn": ["_typecheck"],
-            "inputs": ["src/**/*.ts", "tests/**/*.ts"]
-        },
-        "_test:untested": {
-            "dependsOn": ["_typecheck"],
-            "inputs": ["src/**/*.ts", "scripts/untested-files.ts"],
-            "cache": false
-        },
-        "_test:e2e": {
-            "dependsOn": ["_typecheck"],
-            "inputs": ["src/**/*.ts", "tests/e2e.test.ts"],
-            "cache": false
-        },
-        "_build": {
-            "dependsOn": ["_typecheck", "_lint"],
-            "inputs": ["src/**/*.ts", "tsconfig.json", "package.json"],
-            "outputs": ["dist/**"]
-        },
-        "_check": {
-            "dependsOn": ["_typecheck", "_lint", "_build"]
-        },
-        "_validate": {
-            "dependsOn": ["_check", "_test", "_test:untested"]
-        }
+  "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "WAYBACK_LIVE_TESTS"
+  ],
+  "tasks": {
+    "_typecheck": {
+      "inputs": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "tsconfig.json"
+      ],
+      "outputs": [
+        ".tsbuildinfo"
+      ]
+    },
+    "_lint": {
+      "inputs": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "eslint.config.ts"
+      ],
+      "outputs": [
+        ".eslintcache"
+      ]
+    },
+    "_lint:fix": {
+      "inputs": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "eslint.config.ts"
+      ],
+      "outputs": [
+        ".eslintcache"
+      ],
+      "cache": false
+    },
+    "_test": {
+      "dependsOn": [
+        "_typecheck"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "tests/**/*.ts"
+      ]
+    },
+    "_test:coverage": {
+      "dependsOn": [
+        "_typecheck"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "tests/**/*.ts"
+      ]
+    },
+    "_test:untested": {
+      "dependsOn": [
+        "_typecheck"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "scripts/untested-files.ts"
+      ],
+      "cache": false
+    },
+    "_test:e2e": {
+      "dependsOn": [
+        "_typecheck"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "tests/e2e.test.ts"
+      ],
+      "cache": false
+    },
+    "_build": {
+      "dependsOn": [
+        "_typecheck",
+        "_lint"
+      ],
+      "inputs": [
+        "src/**/*.ts",
+        "tsconfig.json",
+        "package.json"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "_check": {
+      "dependsOn": [
+        "_typecheck",
+        "_lint",
+        "_build"
+      ]
+    },
+    "_validate": {
+      "dependsOn": [
+        "_check",
+        "_test",
+        "_test:untested"
+      ]
     }
+  },
+  "agentGuidance": false
 }
