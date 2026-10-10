@@ -69,7 +69,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ github.sha }}
@@ -100,7 +100,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ github.sha }}
@@ -125,7 +125,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ github.sha }}
@@ -166,7 +166,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: .turbo
           key: turbo-${{ runner.os }}-${{ github.sha }}
